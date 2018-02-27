@@ -8,7 +8,7 @@ import (
 	"golang.org/x/net/websocket"
 )
 
-// PB is a custom Protocol Buffers codec for the "golang.org/x/net/websocket" package
+// PB is a custom Protocol Buffers codec for the "golang.org/x/net/websocket" package.
 var PB = websocket.Codec{
 	Marshal: func(v interface{}) (data []byte, payloadType byte, err error) {
 		msg, ok := v.(proto.Message)
@@ -18,7 +18,6 @@ var PB = websocket.Codec{
 		}
 		data, err = proto.Marshal(msg)
 		return data, websocket.BinaryFrame, err
-
 	},
 	Unmarshal: func(data []byte, payloadType byte, v interface{}) (err error) {
 		if payloadType != websocket.BinaryFrame {

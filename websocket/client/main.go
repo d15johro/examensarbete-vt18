@@ -12,12 +12,16 @@ import (
 )
 
 var (
-	startAccessTime time.Time
+	url    = flag.String("url", "ws://localhost:8080/websocket", "websocket server url")
+	origin = flag.String("origin", "http://localhost/", "websocket origin")
 )
 
 var (
-	url    = flag.String("url", "ws://localhost:8080/websocket", "websocket server url")
-	origin = flag.String("origin", "http://localhost/", "websocket origin")
+	startAccessTime time.Time // global since timer starts and ends in different functions
+)
+
+const (
+	bufferReadSize int32 = 1024 // TODO: increase when sending bigger chunks of data in experiment
 )
 
 type client struct {
@@ -54,13 +58,28 @@ func main() {
 func (c *client) read() {
 	defer c.conn.Close()
 	for {
-		var x pb_send.Send
-		if err := codec.PB.Receive(c.conn, &x); err != nil {
+		var buf = make([]byte, bufferReadSize)
+		n, err := c.conn.Read(buf)
+		if err != nil {
 			log.Println("read:", err)
 			break
 		}
-		accessTimeDuration := time.Since(startAccessTime).Seconds() * 1000
-		log.Printf("access time: %f ms, ID: %d, message: %s\n", accessTimeDuration, c.message.ID, x.Data)
+		data := buf[:n]                        // skip zeros
+		startDeserializationTime := time.Now() // start deserialization time clock
+		var x pb_send.Send
+		if err = codec.PB.Unmarshal(data, websocket.BinaryFrame, &x); err != nil {
+			log.Println("read:", err)
+			break
+		}
+		deserializationDuration := time.Since(startDeserializationTime).Seconds() * 1000 // deserialization time
+		accessTimeDuration := time.Since(startAccessTime).Seconds() * 1000               // access time
+
+		log.Printf("\n---\nmetrics:\n\tID: %d\n\taccess time: %f ms\n\tdeserialization time: %f\n\tmessage: %s\n---",
+			c.message.ID,
+			accessTimeDuration,
+			deserializationDuration,
+			x.Data)
+
 		c.request <- true
 	}
 }
@@ -68,10 +87,10 @@ func (c *client) read() {
 func (c *client) write() {
 	defer c.conn.Close()
 	for range c.request {
-		if c.message.ID > 30 {
+		if c.message.ID >= 5 {
 			break
 		}
-		startAccessTime = time.Now()
+		startAccessTime = time.Now() // start access time clock
 		if err := websocket.JSON.Send(c.conn, c.message); err != nil {
 			log.Println("write:", err)
 			break
