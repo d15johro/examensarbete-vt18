@@ -71,14 +71,15 @@ func (c *client) read() {
 			log.Println("read:", err)
 			break
 		}
-		deserializationDuration := time.Since(startDeserializationTime).Seconds() * 1000 // deserialization time
-		accessTimeDuration := time.Since(startAccessTime).Seconds() * 1000               // access time
+		deserializationDuration := time.Since(startDeserializationTime).Seconds() * 1000 // deserialization time in ms
+		accessTimeDuration := time.Since(startAccessTime).Seconds() * 1000               // access time in ms
 
-		log.Printf("\n---\nmetrics:\n\tID: %d\n\taccess time: %f ms\n\tdeserialization time: %f\n\tmessage: %s\n---",
+		log.Printf("\n---\nmetrics:\n\tID: %d\n\taccess time: %f ms\n\tdeserialization time: %f\n\tmessage: %s\n\tbytes read: %d\n---",
 			c.message.ID,
 			accessTimeDuration,
 			deserializationDuration,
-			x.Data)
+			x.Data,
+			n)
 
 		c.request <- true
 	}
@@ -90,11 +91,12 @@ func (c *client) write() {
 		if c.message.ID >= 5 {
 			break
 		}
+		c.message.ID++
 		startAccessTime = time.Now() // start access time clock
 		if err := websocket.JSON.Send(c.conn, c.message); err != nil {
 			log.Println("write:", err)
 			break
 		}
-		c.message.ID++
+
 	}
 }

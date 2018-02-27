@@ -4,6 +4,7 @@ import (
 	"flag"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/d15johro/examensarbete-vt18/websocket/codec"
 	"github.com/d15johro/examensarbete-vt18/websocket/pb_send"
@@ -54,13 +55,22 @@ func (c *client) read() {
 func (c *client) write() {
 	defer c.conn.Close()
 	for msg := range c.send {
-		if msg.ID%10 == 0 {
-			log.Println("message ID:", msg.ID)
-		}
-		send := pb_send.Send{Data: "some chunk of text"}
-		if err := codec.PB.Send(c.conn, &send); err != nil {
+		startSerializationTime := time.Now()
+		x := pb_send.Send{Data: "some chunk of text"}
+		data, _, err := codec.PB.Marshal(&x)
+		if err != nil {
 			log.Println("write:", err)
 			break
 		}
+		serializationDuration := time.Since(startSerializationTime).Seconds() * 1000 // serialization time in ms
+		n, err := c.conn.Write(data)
+		if err != nil {
+			log.Println("write:", err)
+			break
+		}
+		log.Printf("\n---\nmetrics:\n\tID: %d\n\tserialization time: %f ms\n\tbytes written: %d\n---",
+			msg.ID,
+			serializationDuration,
+			n)
 	}
 }
