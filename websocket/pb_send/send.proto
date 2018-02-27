@@ -1,0 +1,6 @@
+syntax = "proto3";
+package pb.send;
+
+message Send {
+    string data = 1;
+}
