@@ -5,8 +5,8 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/d15johro/examensarbete-vt18-correct/websocket/codec"
-	"github.com/d15johro/examensarbete-vt18-correct/websocket/pb_send"
+	"github.com/d15johro/examensarbete-vt18/websocket/codec"
+	"github.com/d15johro/examensarbete-vt18/websocket/pb_send"
 	"golang.org/x/net/websocket"
 )
 
