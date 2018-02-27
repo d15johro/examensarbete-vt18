@@ -3,11 +3,16 @@ package main
 import (
 	"flag"
 	"log"
+	"time"
 
 	"github.com/d15johro/examensarbete-vt18/websocket/codec"
 	"github.com/d15johro/examensarbete-vt18/websocket/pb_send"
 
 	"golang.org/x/net/websocket"
+)
+
+var (
+	startAccessTime time.Time
 )
 
 var (
@@ -54,7 +59,8 @@ func (c *client) read() {
 			log.Println("read:", err)
 			break
 		}
-		log.Printf("%d: %s\n", c.message.ID, x.Data)
+		accessTimeDuration := time.Since(startAccessTime).Seconds() * 1000
+		log.Printf("access time: %f ms, ID: %d, message: %s\n", accessTimeDuration, c.message.ID, x.Data)
 		c.request <- true
 	}
 }
@@ -62,9 +68,10 @@ func (c *client) read() {
 func (c *client) write() {
 	defer c.conn.Close()
 	for range c.request {
-		if c.message.ID >= 30 {
+		if c.message.ID > 30 {
 			break
 		}
+		startAccessTime = time.Now()
 		if err := websocket.JSON.Send(c.conn, c.message); err != nil {
 			log.Println("write:", err)
 			break
