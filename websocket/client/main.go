@@ -64,8 +64,9 @@ func (c *client) read() {
 			log.Println("read:", err)
 			break
 		}
-		data := buf[:n]                        // skip zeros
-		startDeserializationTime := time.Now() // start deserialization time clock
+		data := buf[:n]                                                      // skip zeros
+		responseTimeDuration := time.Since(startAccessTime).Seconds() * 1000 // response time in ms
+		startDeserializationTime := time.Now()                               // start deserialization time clock
 		var x pb_send.Send
 		if err = codec.PB.Unmarshal(data, websocket.BinaryFrame, &x); err != nil {
 			log.Println("read:", err)
@@ -74,9 +75,10 @@ func (c *client) read() {
 		deserializationDuration := time.Since(startDeserializationTime).Seconds() * 1000 // deserialization time in ms
 		accessTimeDuration := time.Since(startAccessTime).Seconds() * 1000               // access time in ms
 
-		log.Printf("\n---\nmetrics:\n\tID: %d\n\taccess time: %f ms\n\tdeserialization time: %f\n\tmessage: %s\n\tbytes read: %d\n---",
+		log.Printf("\n---\nmetrics:\n\tID: %d\n\taccess time: %fms\n\tresponse time %fms\n\tdeserialization time: %fms\n\tmessage: %s\n\tbytes read (data size): %d\n---",
 			c.message.ID,
 			accessTimeDuration,
+			responseTimeDuration,
 			deserializationDuration,
 			x.Data,
 			n)
