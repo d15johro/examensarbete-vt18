@@ -1,0 +1,8 @@
+namespace fbs;
+
+table Test {
+    text : string;
+    number : int32;
+}
+
+root_type Test;

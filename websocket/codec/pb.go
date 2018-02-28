@@ -17,7 +17,8 @@ var PB = websocket.Codec{
 			return
 		}
 		data, err = proto.Marshal(msg)
-		return data, websocket.BinaryFrame, err
+		payloadType = websocket.BinaryFrame
+		return
 	},
 	Unmarshal: func(data []byte, payloadType byte, v interface{}) (err error) {
 		if payloadType != websocket.BinaryFrame {
@@ -30,6 +31,6 @@ var PB = websocket.Codec{
 			return
 		}
 		err = proto.Unmarshal(data, msg)
-		return err
+		return
 	},
 }
