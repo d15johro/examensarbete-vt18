@@ -63,7 +63,7 @@ table Tag  {
 
 table Member  {
     type : string;
-    ref : string;
+    ref : int64;
     role : string;
 }
 
