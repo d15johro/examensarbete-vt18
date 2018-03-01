@@ -5,8 +5,8 @@ import (
 	"log"
 	"time"
 
+	"github.com/d15johro/examensarbete-vt18/osmdecoder/pbconv/pb"
 	"github.com/d15johro/examensarbete-vt18/websocket/codec"
-	"github.com/d15johro/examensarbete-vt18/websocket/send/fbs/fbs"
 
 	"golang.org/x/net/websocket"
 )
@@ -28,13 +28,7 @@ type client struct {
 	// conn is the websocket connection to which the client is connected.
 	conn *websocket.Conn
 	// request is a channel used to syncronize read and write operations (read --> write).
-	request chan bool
-	message message
-}
-
-// message represents a message holding an ID that tells the server what data to send.
-type message struct {
-	ID int32 `json:"id"`
+	request chan int32
 }
 
 func init() {
@@ -50,12 +44,11 @@ func main() {
 	defer conn.Close()
 	c := client{
 		conn:    conn,
-		request: make(chan bool),
-		message: message{ID: 0},
+		request: make(chan int32),
 	}
 	defer close(c.request)
-	go func() { c.request <- true }() // init write operation
-	go c.write()                      // spawn write function on a different user-space thread
+	go func() { c.request <- 0 }() // init write operation
+	go c.write()                   // spawn write function on a different user-space thread
 	c.read()
 }
 
@@ -77,36 +70,37 @@ func (c *client) read() {
 		responseTimeDuration := time.Since(startAccessTime).Seconds() * 1000 // response time in ms
 		// deserialize data:
 		startDeserializationTime := time.Now() // start deserialization time clock
-		var x fbs.Send
-		if err = codec.FBS.Unmarshal(data, websocket.BinaryFrame, &x); err != nil {
+		var pbOSM pb.OSM
+		if err = codec.PB.Unmarshal(data, websocket.BinaryFrame, &pbOSM); err != nil {
 			log.Println("read:", err)
 			break
 		}
 		deserializationDuration := time.Since(startDeserializationTime).Seconds() * 1000 // deserialization time in ms
 		accessTimeDuration := time.Since(startAccessTime).Seconds() * 1000               // access time in ms
 		// TODO: save metrics to a log file.
-		log.Printf("\n---\nmetrics:\n\tID: %d\n\taccess time: %fms\n\tresponse time %fms\n\tdeserialization time: %fms\n\tmessage: %s\n\tbytes read (data size): %d\n---",
-			c.message.ID,
+		log.Printf("\n---\nmetrics:\n\tID: %d\n\taccess time: %fms\n\tresponse time %fms\n\tdeserialization time: %fms\n\tpbOSM.Generator: %s\n\tbytes read (data size): %d\n---",
+			pbOSM.Id,
 			accessTimeDuration,
 			responseTimeDuration,
 			deserializationDuration,
-			string(x.Data()),
+			pbOSM.Generator,
 			n)
-
-		c.request <- true
+		c.request <- pbOSM.Id + 1
 	}
 }
 
 // write sends a message to server requesting more data.
 func (c *client) write() {
 	defer c.conn.Close()
-	for range c.request {
-		if c.message.ID >= 5 { // limit requests
+	for id := range c.request {
+		if id >= 5 { // limit requests
 			break
 		}
-		c.message.ID++
+		msg := struct {
+			ID int32 `json:"id"`
+		}{ID: id}
 		startAccessTime = time.Now() // start access time clock
-		if err := websocket.JSON.Send(c.conn, c.message); err != nil {
+		if err := websocket.JSON.Send(c.conn, &msg); err != nil {
 			log.Println("write:", err)
 			break
 		}

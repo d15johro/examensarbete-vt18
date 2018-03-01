@@ -8,7 +8,7 @@ import (
 	"github.com/d15johro/examensarbete-vt18/osmdecoder/pbconv/pb"
 )
 
-// Make makes a pb.OSM out of a osmdecoder.OSM
+// Make makes a pb.OSM out of a osmdecoder.OSM.
 func Make(osm *osmdecoder.OSM) (*pb.OSM, error) {
 	if osm == nil {
 		return nil, fmt.Errorf("osm cannot be nil")

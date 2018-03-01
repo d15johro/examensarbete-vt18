@@ -1,7 +1,0 @@
-namespace fbs;
-
-table Send {
-    data:string;
-}
-
-root_type Send;

@@ -6,10 +6,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/google/flatbuffers/go"
+	"github.com/d15johro/examensarbete-vt18/osmdecoder/pbconv"
 
+	"github.com/d15johro/examensarbete-vt18/osmdecoder"
 	"github.com/d15johro/examensarbete-vt18/websocket/codec"
-	"github.com/d15johro/examensarbete-vt18/websocket/send/fbs"
 	"golang.org/x/net/websocket"
 )
 
@@ -19,11 +19,7 @@ type client struct {
 	// conn is the websocket connection to which the client connects.
 	conn *websocket.Conn
 	// send is a channel used to syncronize read and write operations (read --> write).
-	send chan message
-}
-
-type message struct {
-	ID int32 `json:"id"`
+	send chan int32
 }
 
 func init() {
@@ -36,7 +32,7 @@ func main() {
 		defer conn.Close()
 		c := client{
 			conn: conn,
-			send: make(chan message),
+			send: make(chan int32),
 		}
 		defer func() { close(c.send) }()
 		go c.write() // spawn write function on a different user-space thread
@@ -51,12 +47,14 @@ func main() {
 func (c *client) read() {
 	defer c.conn.Close()
 	for {
-		var msg message
+		msg := struct {
+			ID int32 `json:"id"`
+		}{}
 		if err := websocket.JSON.Receive(c.conn, &msg); err != nil {
 			log.Println("read:", err)
 			break
 		}
-		c.send <- msg
+		c.send <- msg.ID
 	}
 }
 
@@ -65,13 +63,24 @@ func (c *client) read() {
 // Collected metrics are appended to a log file.
 func (c *client) write() {
 	defer c.conn.Close()
-	for msg := range c.send {
-		// TODO: select what data to send depending on msg.ID
-		// serialize:
+	for id := range c.send {
+		// TODO: select what data to send depending on msg.ID.
+		// read .osm file and deserialize into a osmdecoder.OSM struct:
+		osm, err := osmdecoder.DecodeFile("../../testdata/test_data.osm")
+		if err != nil {
+			log.Println("write:", err)
+			break
+		}
+		// make a pb.OSM out of osm:
+		pbOSM, err := pbconv.Make(osm)
+		if err != nil {
+			log.Println("write:", err)
+			break
+		}
+		pbOSM.Id = id
+		// serialize pbOSM:
 		startSerializationTime := time.Now() // start serialization time clock
-		builder := flatbuffers.NewBuilder(0)
-		fbs_send.BuildSend(builder, "some chunk of text")
-		data, _, err := codec.FBS.Marshal(builder)
+		data, _, err := codec.PB.Marshal(pbOSM)
 		if err != nil {
 			log.Println("write:", err)
 			break
@@ -85,7 +94,7 @@ func (c *client) write() {
 		}
 		// TODO: append data to a log file.
 		log.Printf("\n---\nmetrics:\n\tID: %d\n\tserialization time: %f ms\n\tbytes written: %d\n---",
-			msg.ID,
+			id,
 			serializationDuration,
 			n)
 	}
