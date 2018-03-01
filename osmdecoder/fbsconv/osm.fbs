@@ -23,7 +23,7 @@ table Bounds {
 }
 
 table SharedAttributes {
-    id : int62;
+    id : int64;
     version : int32;
     timestamp : string;
     uid : int64;
