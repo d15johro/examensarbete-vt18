@@ -3,7 +3,7 @@ namespace fbs;
 // generate with "flatc -g osm.fbs" in current dir.
 
 table OSM {
-    id : int32
+    id : int32;
     version : string;
     generator : string;
     copyright : string;
@@ -66,3 +66,5 @@ table Member  {
     ref : string;
     role : string;
 }
+
+root_type OSM;
