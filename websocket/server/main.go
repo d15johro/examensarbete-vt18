@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -66,7 +67,8 @@ func (c *client) write() {
 	for id := range c.send {
 		// TODO: select what data to send depending on msg.ID.
 		// read .osm file and deserialize into a osmdecoder.OSM struct:
-		osm, err := osmdecoder.DecodeFile("../../testdata/test_data.osm")
+		fileNumber := fmt.Sprintf("%d", id%6)
+		osm, err := osmdecoder.DecodeFile("../../testdata/test_data" + fileNumber + ".osm")
 		if err != nil {
 			log.Println("write:", err)
 			break
@@ -93,7 +95,8 @@ func (c *client) write() {
 			break
 		}
 		// TODO: append data to a log file.
-		log.Printf("\n---\nmetrics:\n\tID: %d\n\tserialization time: %f ms\n\tbytes written: %d\n---",
+		log.Printf("\n---\nmetrics:\n\tfile number: %s\n\tID: %d\n\tserialization time: %f ms\n\tbytes written: %d\n---",
+			fileNumber,
 			id,
 			serializationDuration,
 			n)

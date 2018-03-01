@@ -21,7 +21,7 @@ var (
 )
 
 const (
-	bufferReadSize int32 = 1024 // TODO: increase when sending bigger chunks of data in experiment
+	bufferReadSize int32 = 1024 * 3 // TODO: increase when sending bigger chunks of data in experiment
 )
 
 type client struct {
@@ -85,6 +85,7 @@ func (c *client) read() {
 			deserializationDuration,
 			pbOSM.Generator,
 			n)
+		log.Println(pbOSM.Id)
 		c.request <- pbOSM.Id + 1
 	}
 }
@@ -93,7 +94,7 @@ func (c *client) read() {
 func (c *client) write() {
 	defer c.conn.Close()
 	for id := range c.request {
-		if id >= 5 { // limit requests
+		if id >= 20 { // limit requests
 			break
 		}
 		msg := struct {
