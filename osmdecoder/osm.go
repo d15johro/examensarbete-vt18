@@ -20,26 +20,26 @@ type Bounds struct {
 }
 
 type Node struct {
-	sharedAttributes
+	SharedAttributes
 	Lat  float64 `xml:"lat,attr,omitempty"`
 	Lon  float64 `xml:"lon,attr,omitempty"`
 	Tags []Tag   `xml:"tag,omitempty"`
 }
 
 type Relation struct {
-	sharedAttributes
+	SharedAttributes
 	Visible bool     `xml:"visible,attr,omitempty"`
 	Members []Member `xml:"member,omitempty"`
 	Tags    []Tag    `xml:"tag,omitempty"`
 }
 
 type Way struct {
-	sharedAttributes
+	SharedAttributes
 	Tags []Tag `xml:"tag,omitempty"`
 	Nds  []Nd  `xml:"nd,omitempty"`
 }
 
-type sharedAttributes struct {
+type SharedAttributes struct {
 	ID        int64  `xml:"id,attr,omitempty"`
 	Version   int32  `xml:"version,attr,omitempty"`
 	Timestamp string `xml:"timestamp,attr,omitempty"`

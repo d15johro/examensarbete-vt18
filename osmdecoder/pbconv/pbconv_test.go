@@ -1,39 +1,41 @@
-package osmdecoder_test
+package pbconv_test
 
 import (
 	"bytes"
 	"testing"
 
 	"github.com/d15johro/examensarbete-vt18/osmdecoder"
+	"github.com/d15johro/examensarbete-vt18/osmdecoder/pbconv"
 )
 
-func TestDecode(t *testing.T) {
-	osm, err := osmdecoder.Decode(bytes.NewReader(data))
+func TestMake(t *testing.T) {
+	osm, _ := osmdecoder.Decode(bytes.NewReader(data))
+	pbOSM, err := pbconv.Make(osm)
 	if err != nil {
 		t.Error("expected no error")
 	}
-	if osm.Attribution != "some attribution" {
+	if pbOSM.Attribution != "some attribution" {
 		t.Errorf("expected %s, got %s", "some attribution", osm.Attribution)
 	}
-	if osm.License != "" {
+	if pbOSM.License != "" {
 		t.Errorf("expected %s, got %s", "", osm.License)
 	}
-	if len(osm.Nodes) != 3 {
+	if len(pbOSM.Nodes) != 3 {
 		t.Errorf("expected %d, got %d", 2, len(osm.Nodes))
 	}
-	if len(osm.Ways) != 2 {
+	if len(pbOSM.Ways) != 2 {
 		t.Errorf("expected %d, got %d", 2, len(osm.Ways))
 	}
-	if len(osm.Relations) != 2 {
+	if len(pbOSM.Relations) != 2 {
 		t.Errorf("expected %d, got %d", 2, len(osm.Relations))
 	}
-	if len(osm.Nodes[0].Tags) != 2 {
+	if len(pbOSM.Nodes[0].Tags) != 2 {
 		t.Errorf("expected %d, got %d", 2, len(osm.Nodes[0].Tags))
 	}
-	if osm.Nodes[0].Tags[0].Key != "ele" {
+	if pbOSM.Nodes[0].Tags[0].Key != "ele" {
 		t.Errorf("expected %s, got %s", "ele", osm.Nodes[0].Tags[0].Key)
 	}
-	if osm.Nodes[0].ID != 151399886 {
+	if pbOSM.Nodes[0].SharedAttributes.Id != 151399886 {
 		t.Errorf("expected %d, got %d", 151399886, osm.Nodes[0].ID)
 	}
 }
