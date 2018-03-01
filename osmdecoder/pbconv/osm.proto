@@ -1,7 +1,7 @@
 syntax = "proto3";
 package pb;
 
-// generate with "protoc --go_out=. osm.proto" in current dir and move generated file to ./pb.
+// generate with "protoc --go_out=./pb osm.proto" in current dir.
 
 message OSM {
     int32 id = 1; // used for keeping track of current .osm file in experiment (not in part of the spec)
@@ -35,14 +35,15 @@ message SharedAttributes {
 message Node {
     double lat = 1;
     double lon = 2;
-    repeated Tag tags = 3;
-    SharedAttributes sharedAttributes = 4;
+    SharedAttributes sharedAttributes = 3;
+    repeated Tag tags = 4;
 }
 
 message Way {
-    repeated Tag tags = 1;
-    repeated Nd nds = 2;
-    SharedAttributes sharedAttributes = 3;
+    SharedAttributes sharedAttributes = 1;
+    repeated Tag tags = 2;
+    repeated Nd nds = 3;
+    
 }
 
 message Nd {
@@ -51,9 +52,9 @@ message Nd {
 
 message Relation {
     bool visible = 1;
-    repeated Member members = 2;
-    repeated Tag tags = 3;
-    SharedAttributes sharedAttributes = 4;
+    SharedAttributes sharedAttributes = 2;
+    repeated Member members = 3;
+    repeated Tag tags = 4;
 }
 
 message Tag {
