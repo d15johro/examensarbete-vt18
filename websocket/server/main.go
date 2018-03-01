@@ -6,8 +6,10 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/google/flatbuffers/go"
+
 	"github.com/d15johro/examensarbete-vt18/websocket/codec"
-	"github.com/d15johro/examensarbete-vt18/websocket/pb_send"
+	"github.com/d15johro/examensarbete-vt18/websocket/send/fbs"
 	"golang.org/x/net/websocket"
 )
 
@@ -65,10 +67,11 @@ func (c *client) write() {
 	defer c.conn.Close()
 	for msg := range c.send {
 		// TODO: select what data to send depending on msg.ID
-		x := pb_send.Send{Data: "some chunk of text"} // hardcoded
-		// serialize data structure:
+		// serialize:
 		startSerializationTime := time.Now() // start serialization time clock
-		data, _, err := codec.PB.Marshal(&x)
+		builder := flatbuffers.NewBuilder(0)
+		fbs_send.BuildSend(builder, "some chunk of text")
+		data, _, err := codec.FBS.Marshal(builder)
 		if err != nil {
 			log.Println("write:", err)
 			break

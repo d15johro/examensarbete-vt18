@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/d15johro/examensarbete-vt18/websocket/codec"
-	"github.com/d15johro/examensarbete-vt18/websocket/pb_send"
+	"github.com/d15johro/examensarbete-vt18/websocket/send/fbs/fbs"
 
 	"golang.org/x/net/websocket"
 )
@@ -77,8 +77,8 @@ func (c *client) read() {
 		responseTimeDuration := time.Since(startAccessTime).Seconds() * 1000 // response time in ms
 		// deserialize data:
 		startDeserializationTime := time.Now() // start deserialization time clock
-		var x pb_send.Send
-		if err = codec.PB.Unmarshal(data, websocket.BinaryFrame, &x); err != nil {
+		var x fbs.Send
+		if err = codec.FBS.Unmarshal(data, websocket.BinaryFrame, &x); err != nil {
 			log.Println("read:", err)
 			break
 		}
@@ -90,7 +90,7 @@ func (c *client) read() {
 			accessTimeDuration,
 			responseTimeDuration,
 			deserializationDuration,
-			x.Data,
+			string(x.Data()),
 			n)
 
 		c.request <- true
