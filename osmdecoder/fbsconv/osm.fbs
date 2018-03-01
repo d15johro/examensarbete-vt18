@@ -28,7 +28,7 @@ table SharedAttributes {
     timestamp : string;
     uid : int64;
     user : string;
-    changeset : 6;
+    changeset : int64;
 }
 
 table Node {
