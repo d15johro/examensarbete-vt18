@@ -7,7 +7,6 @@ import (
 
 	"github.com/d15johro/examensarbete-vt18/osmdecoder/pbconv/pb"
 	"github.com/d15johro/examensarbete-vt18/websocket/codec"
-
 	"golang.org/x/net/websocket"
 )
 

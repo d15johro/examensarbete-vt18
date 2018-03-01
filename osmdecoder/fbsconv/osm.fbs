@@ -1,0 +1,68 @@
+namespace fbs;
+
+// generate with "flatc -g osm.fbs" in current dir.
+
+table OSM {
+    id : int32
+    version : string;
+    generator : string;
+    copyright : string;
+    attribution : string;
+    license : string;
+    bounds : Bounds;
+    nodes : [Node];
+    ways : [Way];
+    relations : [Relation];
+} 
+
+table Bounds {
+    minlat : double;
+    minlon : double;
+    maxlat : double;
+    maxlon : double;
+}
+
+table SharedAttributes {
+    id : int62;
+    version : int32;
+    timestamp : string;
+    uid : int64;
+    user : string;
+    changeset : 6;
+}
+
+table Node {
+    lat : double;
+    lon : double;
+    sharedAttributes : SharedAttributes;
+    tags : [Tag];
+    
+}
+
+table Way {
+    sharedAttributes : SharedAttributes;
+    nds : [Nd];
+    tags : [Tag];
+}
+
+table Nd {
+    ref : int64;
+}
+
+table Relation {
+    visible : bool;
+    sharedAttributes : SharedAttributes;
+    members : [Member];
+    tags : [Tag];
+}
+
+table Tag  {
+    key : string;
+    value : string;
+}
+
+table Member  {
+    type : string;
+    ref : string;
+    role : string;
+}

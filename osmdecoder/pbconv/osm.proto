@@ -1,7 +1,7 @@
 syntax = "proto3";
 package pb;
 
-// generate with "protoc --go_out=. osm.proto" in current dir.
+// generate with "protoc --go_out=. osm.proto" in current dir and move generated file to ./pb.
 
 message OSM {
     int32 id = 1; // used for keeping track of current .osm file in experiment (not in part of the spec)

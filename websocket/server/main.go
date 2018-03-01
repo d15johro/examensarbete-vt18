@@ -7,9 +7,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/d15johro/examensarbete-vt18/osmdecoder/pbconv"
-
 	"github.com/d15johro/examensarbete-vt18/osmdecoder"
+	"github.com/d15johro/examensarbete-vt18/osmdecoder/pbconv"
 	"github.com/d15johro/examensarbete-vt18/websocket/codec"
 	"golang.org/x/net/websocket"
 )
