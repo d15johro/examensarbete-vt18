@@ -35,7 +35,7 @@ func main() {
 }
 
 func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	handleFBS(w, r)
+	handlePB(w, r)
 }
 
 func handleFBS(w http.ResponseWriter, r *http.Request) {
