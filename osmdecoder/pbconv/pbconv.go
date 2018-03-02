@@ -14,9 +14,8 @@ func Make(osm *osmdecoder.OSM) (*pb.OSM, error) {
 		return nil, fmt.Errorf("osm cannot be nil")
 	}
 	pbOSM := &pb.OSM{
-		Id:          0,
 		Version:     osm.Version,
-		Generator:   osm.Version,
+		Generator:   osm.Generator,
 		Copyright:   osm.Copyright,
 		Attribution: osm.Attribution,
 		License:     osm.License,

@@ -15,24 +15,24 @@ func TestMake(t *testing.T) {
 	if err != nil {
 		t.Error("expected no error")
 	}
-	pbOSM := fbs.GetRootAsOSM(builder.Bytes[builder.Head():], 0)
-	if string(pbOSM.Attribution()) != "some attribution" {
-		t.Errorf("expected %s, got %s", "some attribution", string(pbOSM.Attribution()))
+	fbsOSM := fbs.GetRootAsOSM(builder.Bytes[builder.Head():], 0)
+	if string(fbsOSM.Attribution()) != "some attribution" {
+		t.Errorf("expected %s, got %s", "some attribution", string(fbsOSM.Attribution()))
 	}
-	if string(pbOSM.License()) != "" {
-		t.Errorf("expected %s, got %s", "", string(pbOSM.License()))
+	if string(fbsOSM.License()) != "" {
+		t.Errorf("expected %s, got %s", "", string(fbsOSM.License()))
 	}
-	if pbOSM.NodesLength() != 3 {
-		t.Errorf("expected %d, got %d", 3, pbOSM.NodesLength())
+	if fbsOSM.NodesLength() != 3 {
+		t.Errorf("expected %d, got %d", 3, fbsOSM.NodesLength())
 	}
-	if pbOSM.WaysLength() != 2 {
-		t.Errorf("expected %d, got %d", 2, pbOSM.WaysLength())
+	if fbsOSM.WaysLength() != 2 {
+		t.Errorf("expected %d, got %d", 2, fbsOSM.WaysLength())
 	}
-	if pbOSM.RelationsLength() != 2 {
-		t.Errorf("expected %d, got %d", 2, pbOSM.RelationsLength())
+	if fbsOSM.RelationsLength() != 2 {
+		t.Errorf("expected %d, got %d", 2, fbsOSM.RelationsLength())
 	}
 	var node fbs.Node
-	ok := pbOSM.Nodes(&node, 0)
+	ok := fbsOSM.Nodes(&node, 0)
 	if !ok {
 		t.Error("expected node to exist")
 	}

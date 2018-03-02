@@ -51,7 +51,6 @@ func makeOSM(builder *flatbuffers.Builder, osm *osmdecoder.OSM) flatbuffers.UOff
 	relations := builder.EndVector(len(osm.Relations))
 	// OSM:
 	fbs.OSMStart(builder)
-	fbs.OSMAddId(builder, 0)
 	fbs.OSMAddVersion(builder, version)
 	fbs.OSMAddGenerator(builder, generator)
 	fbs.OSMAddAttribution(builder, attribution)

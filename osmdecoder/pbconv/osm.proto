@@ -4,7 +4,6 @@ package pb;
 // generate with "protoc --go_out=./pb osm.proto" in current dir.
 
 message OSM {
-    int32 id = 1; // used for keeping track of current .osm file in experiment (not in part of the spec)
     string version = 2;
     string generator = 3;
     string copyright = 4;

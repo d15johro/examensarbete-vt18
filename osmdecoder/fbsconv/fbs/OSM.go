@@ -26,20 +26,8 @@ func (rcv *OSM) Table() flatbuffers.Table {
 	return rcv._tab
 }
 
-func (rcv *OSM) Id() int32 {
-	o := flatbuffers.UOffsetT(rcv._tab.Offset(4))
-	if o != 0 {
-		return rcv._tab.GetInt32(o + rcv._tab.Pos)
-	}
-	return 0
-}
-
-func (rcv *OSM) MutateId(n int32) bool {
-	return rcv._tab.MutateInt32Slot(4, n)
-}
-
 func (rcv *OSM) Version() []byte {
-	o := flatbuffers.UOffsetT(rcv._tab.Offset(6))
+	o := flatbuffers.UOffsetT(rcv._tab.Offset(4))
 	if o != 0 {
 		return rcv._tab.ByteVector(o + rcv._tab.Pos)
 	}
@@ -47,7 +35,7 @@ func (rcv *OSM) Version() []byte {
 }
 
 func (rcv *OSM) Generator() []byte {
-	o := flatbuffers.UOffsetT(rcv._tab.Offset(8))
+	o := flatbuffers.UOffsetT(rcv._tab.Offset(6))
 	if o != 0 {
 		return rcv._tab.ByteVector(o + rcv._tab.Pos)
 	}
@@ -55,7 +43,7 @@ func (rcv *OSM) Generator() []byte {
 }
 
 func (rcv *OSM) Copyright() []byte {
-	o := flatbuffers.UOffsetT(rcv._tab.Offset(10))
+	o := flatbuffers.UOffsetT(rcv._tab.Offset(8))
 	if o != 0 {
 		return rcv._tab.ByteVector(o + rcv._tab.Pos)
 	}
@@ -63,7 +51,7 @@ func (rcv *OSM) Copyright() []byte {
 }
 
 func (rcv *OSM) Attribution() []byte {
-	o := flatbuffers.UOffsetT(rcv._tab.Offset(12))
+	o := flatbuffers.UOffsetT(rcv._tab.Offset(10))
 	if o != 0 {
 		return rcv._tab.ByteVector(o + rcv._tab.Pos)
 	}
@@ -71,7 +59,7 @@ func (rcv *OSM) Attribution() []byte {
 }
 
 func (rcv *OSM) License() []byte {
-	o := flatbuffers.UOffsetT(rcv._tab.Offset(14))
+	o := flatbuffers.UOffsetT(rcv._tab.Offset(12))
 	if o != 0 {
 		return rcv._tab.ByteVector(o + rcv._tab.Pos)
 	}
@@ -79,7 +67,7 @@ func (rcv *OSM) License() []byte {
 }
 
 func (rcv *OSM) Bounds(obj *Bounds) *Bounds {
-	o := flatbuffers.UOffsetT(rcv._tab.Offset(16))
+	o := flatbuffers.UOffsetT(rcv._tab.Offset(14))
 	if o != 0 {
 		x := rcv._tab.Indirect(o + rcv._tab.Pos)
 		if obj == nil {
@@ -92,7 +80,7 @@ func (rcv *OSM) Bounds(obj *Bounds) *Bounds {
 }
 
 func (rcv *OSM) Nodes(obj *Node, j int) bool {
-	o := flatbuffers.UOffsetT(rcv._tab.Offset(18))
+	o := flatbuffers.UOffsetT(rcv._tab.Offset(16))
 	if o != 0 {
 		x := rcv._tab.Vector(o)
 		x += flatbuffers.UOffsetT(j) * 4
@@ -104,7 +92,7 @@ func (rcv *OSM) Nodes(obj *Node, j int) bool {
 }
 
 func (rcv *OSM) NodesLength() int {
-	o := flatbuffers.UOffsetT(rcv._tab.Offset(18))
+	o := flatbuffers.UOffsetT(rcv._tab.Offset(16))
 	if o != 0 {
 		return rcv._tab.VectorLen(o)
 	}
@@ -112,7 +100,7 @@ func (rcv *OSM) NodesLength() int {
 }
 
 func (rcv *OSM) Ways(obj *Way, j int) bool {
-	o := flatbuffers.UOffsetT(rcv._tab.Offset(20))
+	o := flatbuffers.UOffsetT(rcv._tab.Offset(18))
 	if o != 0 {
 		x := rcv._tab.Vector(o)
 		x += flatbuffers.UOffsetT(j) * 4
@@ -124,7 +112,7 @@ func (rcv *OSM) Ways(obj *Way, j int) bool {
 }
 
 func (rcv *OSM) WaysLength() int {
-	o := flatbuffers.UOffsetT(rcv._tab.Offset(20))
+	o := flatbuffers.UOffsetT(rcv._tab.Offset(18))
 	if o != 0 {
 		return rcv._tab.VectorLen(o)
 	}
@@ -132,7 +120,7 @@ func (rcv *OSM) WaysLength() int {
 }
 
 func (rcv *OSM) Relations(obj *Relation, j int) bool {
-	o := flatbuffers.UOffsetT(rcv._tab.Offset(22))
+	o := flatbuffers.UOffsetT(rcv._tab.Offset(20))
 	if o != 0 {
 		x := rcv._tab.Vector(o)
 		x += flatbuffers.UOffsetT(j) * 4
@@ -144,7 +132,7 @@ func (rcv *OSM) Relations(obj *Relation, j int) bool {
 }
 
 func (rcv *OSM) RelationsLength() int {
-	o := flatbuffers.UOffsetT(rcv._tab.Offset(22))
+	o := flatbuffers.UOffsetT(rcv._tab.Offset(20))
 	if o != 0 {
 		return rcv._tab.VectorLen(o)
 	}
@@ -152,43 +140,40 @@ func (rcv *OSM) RelationsLength() int {
 }
 
 func OSMStart(builder *flatbuffers.Builder) {
-	builder.StartObject(10)
-}
-func OSMAddId(builder *flatbuffers.Builder, id int32) {
-	builder.PrependInt32Slot(0, id, 0)
+	builder.StartObject(9)
 }
 func OSMAddVersion(builder *flatbuffers.Builder, version flatbuffers.UOffsetT) {
-	builder.PrependUOffsetTSlot(1, flatbuffers.UOffsetT(version), 0)
+	builder.PrependUOffsetTSlot(0, flatbuffers.UOffsetT(version), 0)
 }
 func OSMAddGenerator(builder *flatbuffers.Builder, generator flatbuffers.UOffsetT) {
-	builder.PrependUOffsetTSlot(2, flatbuffers.UOffsetT(generator), 0)
+	builder.PrependUOffsetTSlot(1, flatbuffers.UOffsetT(generator), 0)
 }
 func OSMAddCopyright(builder *flatbuffers.Builder, copyright flatbuffers.UOffsetT) {
-	builder.PrependUOffsetTSlot(3, flatbuffers.UOffsetT(copyright), 0)
+	builder.PrependUOffsetTSlot(2, flatbuffers.UOffsetT(copyright), 0)
 }
 func OSMAddAttribution(builder *flatbuffers.Builder, attribution flatbuffers.UOffsetT) {
-	builder.PrependUOffsetTSlot(4, flatbuffers.UOffsetT(attribution), 0)
+	builder.PrependUOffsetTSlot(3, flatbuffers.UOffsetT(attribution), 0)
 }
 func OSMAddLicense(builder *flatbuffers.Builder, license flatbuffers.UOffsetT) {
-	builder.PrependUOffsetTSlot(5, flatbuffers.UOffsetT(license), 0)
+	builder.PrependUOffsetTSlot(4, flatbuffers.UOffsetT(license), 0)
 }
 func OSMAddBounds(builder *flatbuffers.Builder, bounds flatbuffers.UOffsetT) {
-	builder.PrependUOffsetTSlot(6, flatbuffers.UOffsetT(bounds), 0)
+	builder.PrependUOffsetTSlot(5, flatbuffers.UOffsetT(bounds), 0)
 }
 func OSMAddNodes(builder *flatbuffers.Builder, nodes flatbuffers.UOffsetT) {
-	builder.PrependUOffsetTSlot(7, flatbuffers.UOffsetT(nodes), 0)
+	builder.PrependUOffsetTSlot(6, flatbuffers.UOffsetT(nodes), 0)
 }
 func OSMStartNodesVector(builder *flatbuffers.Builder, numElems int) flatbuffers.UOffsetT {
 	return builder.StartVector(4, numElems, 4)
 }
 func OSMAddWays(builder *flatbuffers.Builder, ways flatbuffers.UOffsetT) {
-	builder.PrependUOffsetTSlot(8, flatbuffers.UOffsetT(ways), 0)
+	builder.PrependUOffsetTSlot(7, flatbuffers.UOffsetT(ways), 0)
 }
 func OSMStartWaysVector(builder *flatbuffers.Builder, numElems int) flatbuffers.UOffsetT {
 	return builder.StartVector(4, numElems, 4)
 }
 func OSMAddRelations(builder *flatbuffers.Builder, relations flatbuffers.UOffsetT) {
-	builder.PrependUOffsetTSlot(9, flatbuffers.UOffsetT(relations), 0)
+	builder.PrependUOffsetTSlot(8, flatbuffers.UOffsetT(relations), 0)
 }
 func OSMStartRelationsVector(builder *flatbuffers.Builder, numElems int) flatbuffers.UOffsetT {
 	return builder.StartVector(4, numElems, 4)
