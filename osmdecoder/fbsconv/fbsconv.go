@@ -9,41 +9,40 @@ import (
 	"github.com/google/flatbuffers/go"
 )
 
-// Make makes a fbs.OSM out of a osmdecoder.OSM.
-func Make(osm *osmdecoder.OSM) (*flatbuffers.Builder, error) {
+// Build builds a fbs.OSM out of a osmdecoder.OSM.
+func Build(builder *flatbuffers.Builder, osm *osmdecoder.OSM) error {
 	if osm == nil {
-		return nil, errors.New("osm cannot be nil")
+		return errors.New("osm cannot be nil")
 	}
-	builder := flatbuffers.NewBuilder(0)
 	builder.Reset()
-	root := makeOSM(builder, osm)
+	root := buildOSM(builder, osm)
 	builder.Finish(root)
-	return builder, nil
+	return nil
 }
 
-func makeOSM(builder *flatbuffers.Builder, osm *osmdecoder.OSM) flatbuffers.UOffsetT {
+func buildOSM(builder *flatbuffers.Builder, osm *osmdecoder.OSM) flatbuffers.UOffsetT {
 	version := builder.CreateString(osm.Version)
 	generator := builder.CreateString(osm.Generator)
 	copyright := builder.CreateString(osm.Copyright)
 	attribution := builder.CreateString(osm.Attribution)
 	license := builder.CreateString(osm.License)
-	bounds := makeBounds(builder, osm.Bounds)
+	bounds := buildBounds(builder, osm.Bounds)
 	// nodes:
-	nodesUOffsetTs := makeNodesUOffsetTs(builder, osm.Nodes)
+	nodesUOffsetTs := buildNodesUOffsetTs(builder, osm.Nodes)
 	fbs.OSMStartNodesVector(builder, len(osm.Nodes))
 	for i := len(osm.Nodes) - 1; i >= 0; i-- {
 		builder.PrependUOffsetT(nodesUOffsetTs[i])
 	}
 	nodes := builder.EndVector(len(osm.Nodes))
 	// ways:
-	waysUOffsetTs := makeWaysUOffsetTs(builder, osm.Ways)
+	waysUOffsetTs := buildWaysUOffsetTs(builder, osm.Ways)
 	fbs.OSMStartNodesVector(builder, len(osm.Ways))
 	for i := len(osm.Ways) - 1; i >= 0; i-- {
 		builder.PrependUOffsetT(waysUOffsetTs[i])
 	}
 	ways := builder.EndVector(len(osm.Ways))
 	// relations:
-	relationsUOffsetTs := makeRelationsUOffsetTs(builder, osm.Relations)
+	relationsUOffsetTs := buildRelationsUOffsetTs(builder, osm.Relations)
 	fbs.OSMStartNodesVector(builder, len(osm.Relations))
 	for i := len(osm.Relations) - 1; i >= 0; i-- {
 		builder.PrependUOffsetT(relationsUOffsetTs[i])
@@ -63,7 +62,7 @@ func makeOSM(builder *flatbuffers.Builder, osm *osmdecoder.OSM) flatbuffers.UOff
 	return fbs.OSMEnd(builder)
 }
 
-func makeBounds(builder *flatbuffers.Builder, bounds osmdecoder.Bounds) flatbuffers.UOffsetT {
+func buildBounds(builder *flatbuffers.Builder, bounds osmdecoder.Bounds) flatbuffers.UOffsetT {
 	fbs.BoundsStart(builder)
 	fbs.BoundsAddMaxlat(builder, bounds.Maxlat)
 	fbs.BoundsAddMaxlon(builder, bounds.Maxlon)
@@ -72,13 +71,13 @@ func makeBounds(builder *flatbuffers.Builder, bounds osmdecoder.Bounds) flatbuff
 	return fbs.BoundsEnd(builder)
 }
 
-func makeNodesUOffsetTs(builder *flatbuffers.Builder, nodes []osmdecoder.Node) []flatbuffers.UOffsetT {
+func buildNodesUOffsetTs(builder *flatbuffers.Builder, nodes []osmdecoder.Node) []flatbuffers.UOffsetT {
 	if len(nodes) == 0 {
 		return nil
 	}
 	fbsNodes := make([]flatbuffers.UOffsetT, len(nodes))
 	for i := 0; i < len(nodes); i++ {
-		sharedAttributes := makeSharedAttributes(builder, osmdecoder.SharedAttributes{
+		sharedAttributes := buildSharedAttributes(builder, osmdecoder.SharedAttributes{
 			ID:        nodes[i].ID,
 			User:      nodes[i].User,
 			UID:       nodes[i].UID,
@@ -87,7 +86,7 @@ func makeNodesUOffsetTs(builder *flatbuffers.Builder, nodes []osmdecoder.Node) [
 			Timestamp: nodes[i].Timestamp,
 		})
 		// tags:
-		tagsUOffsetTs := makeTagsUOffsetTs(builder, nodes[i].Tags)
+		tagsUOffsetTs := buildTagsUOffsetTs(builder, nodes[i].Tags)
 		fbs.NodeStartTagsVector(builder, len(nodes[i].Tags))
 		for i := len(nodes[i].Tags) - 1; i >= 0; i-- {
 			builder.PrependUOffsetT(tagsUOffsetTs[i])
@@ -104,13 +103,13 @@ func makeNodesUOffsetTs(builder *flatbuffers.Builder, nodes []osmdecoder.Node) [
 	return fbsNodes
 }
 
-func makeWaysUOffsetTs(builder *flatbuffers.Builder, ways []osmdecoder.Way) []flatbuffers.UOffsetT {
+func buildWaysUOffsetTs(builder *flatbuffers.Builder, ways []osmdecoder.Way) []flatbuffers.UOffsetT {
 	if len(ways) == 0 {
 		return nil
 	}
 	fbsWays := make([]flatbuffers.UOffsetT, len(ways))
 	for i := 0; i < len(ways); i++ {
-		sharedAttributes := makeSharedAttributes(builder, osmdecoder.SharedAttributes{
+		sharedAttributes := buildSharedAttributes(builder, osmdecoder.SharedAttributes{
 			ID:        ways[i].ID,
 			User:      ways[i].User,
 			UID:       ways[i].UID,
@@ -119,14 +118,14 @@ func makeWaysUOffsetTs(builder *flatbuffers.Builder, ways []osmdecoder.Way) []fl
 			Timestamp: ways[i].Timestamp,
 		})
 		// nds:
-		ndsUOffsetTs := makeNdsUOffsetTs(builder, ways[i].Nds)
+		ndsUOffsetTs := buildNdsUOffsetTs(builder, ways[i].Nds)
 		fbs.WayStartNdsVector(builder, len(ways[i].Nds))
 		for i := len(ways[i].Nds) - 1; i >= 0; i-- {
 			builder.PrependUOffsetT(ndsUOffsetTs[i])
 		}
 		nds := builder.EndVector(len(ways[i].Nds))
 		// tags:
-		tagsUOffsetTs := makeTagsUOffsetTs(builder, ways[i].Tags)
+		tagsUOffsetTs := buildTagsUOffsetTs(builder, ways[i].Tags)
 		fbs.WayStartTagsVector(builder, len(ways[i].Tags))
 		for i := len(ways[i].Tags) - 1; i >= 0; i-- {
 			builder.PrependUOffsetT(tagsUOffsetTs[i])
@@ -142,7 +141,7 @@ func makeWaysUOffsetTs(builder *flatbuffers.Builder, ways []osmdecoder.Way) []fl
 	return fbsWays
 }
 
-func makeRelationsUOffsetTs(builder *flatbuffers.Builder, relations []osmdecoder.Relation) []flatbuffers.UOffsetT {
+func buildRelationsUOffsetTs(builder *flatbuffers.Builder, relations []osmdecoder.Relation) []flatbuffers.UOffsetT {
 	if len(relations) == 0 {
 		return nil
 	}
@@ -153,7 +152,7 @@ func makeRelationsUOffsetTs(builder *flatbuffers.Builder, relations []osmdecoder
 		if relations[i].Visible {
 			visible = byte(1)
 		}
-		sharedAttributes := makeSharedAttributes(builder, osmdecoder.SharedAttributes{
+		sharedAttributes := buildSharedAttributes(builder, osmdecoder.SharedAttributes{
 			ID:        relations[i].ID,
 			User:      relations[i].User,
 			UID:       relations[i].UID,
@@ -162,14 +161,14 @@ func makeRelationsUOffsetTs(builder *flatbuffers.Builder, relations []osmdecoder
 			Timestamp: relations[i].Timestamp,
 		})
 		// members:
-		membersUOffsetTs := makeMembersUOffsetTs(builder, relations[i].Members)
+		membersUOffsetTs := buildMembersUOffsetTs(builder, relations[i].Members)
 		fbs.RelationStartMembersVector(builder, len(relations[i].Members))
 		for i := len(relations[i].Members) - 1; i >= 0; i-- {
 			builder.PrependUOffsetT(membersUOffsetTs[i])
 		}
 		members := builder.EndVector(len(relations[i].Members))
 		// tags:
-		tagsUOffsetTs := makeTagsUOffsetTs(builder, relations[i].Tags)
+		tagsUOffsetTs := buildTagsUOffsetTs(builder, relations[i].Tags)
 		fbs.RelationStartTagsVector(builder, len(relations[i].Tags))
 		for i := len(relations[i].Tags) - 1; i >= 0; i-- {
 			builder.PrependUOffsetT(tagsUOffsetTs[i])
@@ -186,7 +185,7 @@ func makeRelationsUOffsetTs(builder *flatbuffers.Builder, relations []osmdecoder
 	return fbsRelation
 }
 
-func makeSharedAttributes(builder *flatbuffers.Builder, sharedAttributes osmdecoder.SharedAttributes) flatbuffers.UOffsetT {
+func buildSharedAttributes(builder *flatbuffers.Builder, sharedAttributes osmdecoder.SharedAttributes) flatbuffers.UOffsetT {
 	timestamp := builder.CreateString(sharedAttributes.Timestamp)
 	user := builder.CreateString(sharedAttributes.User)
 	fbs.SharedAttributesStart(builder)
@@ -199,7 +198,7 @@ func makeSharedAttributes(builder *flatbuffers.Builder, sharedAttributes osmdeco
 	return fbs.SharedAttributesEnd(builder)
 }
 
-func makeMembersUOffsetTs(builder *flatbuffers.Builder, members []osmdecoder.Member) []flatbuffers.UOffsetT {
+func buildMembersUOffsetTs(builder *flatbuffers.Builder, members []osmdecoder.Member) []flatbuffers.UOffsetT {
 	if len(members) == 0 {
 		return nil
 	}
@@ -216,7 +215,7 @@ func makeMembersUOffsetTs(builder *flatbuffers.Builder, members []osmdecoder.Mem
 	return fbsMembers
 }
 
-func makeNdsUOffsetTs(builder *flatbuffers.Builder, nds []osmdecoder.Nd) []flatbuffers.UOffsetT {
+func buildNdsUOffsetTs(builder *flatbuffers.Builder, nds []osmdecoder.Nd) []flatbuffers.UOffsetT {
 	if len(nds) == 0 {
 		return nil
 	}
@@ -229,7 +228,7 @@ func makeNdsUOffsetTs(builder *flatbuffers.Builder, nds []osmdecoder.Nd) []flatb
 	return fbsNds
 }
 
-func makeTagsUOffsetTs(builder *flatbuffers.Builder, tags []osmdecoder.Tag) []flatbuffers.UOffsetT {
+func buildTagsUOffsetTs(builder *flatbuffers.Builder, tags []osmdecoder.Tag) []flatbuffers.UOffsetT {
 	if len(tags) == 0 {
 		return nil
 	}

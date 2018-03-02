@@ -32,6 +32,10 @@ func main() {
 }
 
 func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	handlePB(w, r)
+}
+
+func handlePB(w http.ResponseWriter, r *http.Request) {
 	// validate http method:
 	if r.Method != http.MethodGet {
 		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)

@@ -22,6 +22,10 @@ type metrics struct {
 }
 
 func main() {
+	doPB()
+}
+
+func doPB() {
 	c := http.Client{}
 	for i := 0; i < 10; i++ {
 		startAccessClock := time.Now()
@@ -58,7 +62,6 @@ func main() {
 		}
 		m.log()
 	}
-
 }
 
 func (m *metrics) log() {

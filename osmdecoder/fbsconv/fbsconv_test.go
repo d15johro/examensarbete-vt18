@@ -4,14 +4,17 @@ import (
 	"bytes"
 	"testing"
 
+	"github.com/google/flatbuffers/go"
+
 	"github.com/d15johro/examensarbete-vt18/osmdecoder"
 	"github.com/d15johro/examensarbete-vt18/osmdecoder/fbsconv"
 	"github.com/d15johro/examensarbete-vt18/osmdecoder/fbsconv/fbs"
 )
 
-func TestMake(t *testing.T) {
+func TestBuild(t *testing.T) {
 	osm, _ := osmdecoder.Decode(bytes.NewReader(data))
-	builder, err := fbsconv.Make(osm)
+	builder := flatbuffers.NewBuilder(0)
+	err := fbsconv.Build(builder, osm)
 	if err != nil {
 		t.Error("expected no error")
 	}
