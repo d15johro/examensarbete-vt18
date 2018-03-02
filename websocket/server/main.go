@@ -9,7 +9,8 @@ import (
 
 	"github.com/d15johro/examensarbete-vt18/osmdecoder"
 	"github.com/d15johro/examensarbete-vt18/osmdecoder/pbconv"
-	"github.com/d15johro/examensarbete-vt18/websocket/codec"
+	"github.com/golang/protobuf/proto"
+	flatbuffers "github.com/google/flatbuffers/go"
 	"golang.org/x/net/websocket"
 )
 
@@ -34,10 +35,12 @@ func main() {
 			conn: conn,
 			send: make(chan int32),
 		}
+		c.conn.PayloadType = websocket.BinaryFrame
 		defer func() { close(c.send) }()
 		go c.write() // spawn write function on a different user-space thread
 		c.read()
 	}))
+	log.Println("starting websocket server on:", *addr)
 	log.Fatalln(http.ListenAndServe(*addr, nil))
 }
 
@@ -80,13 +83,11 @@ func (c *client) write() {
 		}
 		pbOSM.Id = id
 		// serialize pbOSM:
-		startSerializationTime := time.Now() // start serialization time clock
-		data, _, err := codec.PB.Marshal(pbOSM)
+		data, serializationTime, err := serializeGetTime(pbOSM, serialize)
 		if err != nil {
 			log.Println("write:", err)
 			break
 		}
-		serializationDuration := time.Since(startSerializationTime).Seconds() * 1000 // serialization time in ms
 		// write data to client:
 		n, err := c.conn.Write(data)
 		if err != nil {
@@ -94,10 +95,32 @@ func (c *client) write() {
 			break
 		}
 		// TODO: append data to a log file.
-		log.Printf("\n---\nmetrics:\n\tfile number: %s\n\tID: %d\n\tserialization time: %f ms\n\tbytes written: %d\n---",
+		log.Printf("\n---\nmetrics:\n\tfile number: %s\n\tID: %d\n\tserialize time: %f ms\n\tbytes written: %d\n---",
 			fileNumber,
 			id,
-			serializationDuration,
+			serializationTime,
 			n)
 	}
+}
+
+func serializeGetTime(v interface{}, f func(v interface{}) (data []byte, err error)) (data []byte, ms float64, err error) {
+	start := time.Now()
+	data, err = f(v)
+	if err != nil {
+		return
+	}
+	elapsed := time.Since(start)
+	ms = elapsed.Seconds() * 1000
+	return
+}
+
+func serialize(v interface{}) (data []byte, err error) {
+	if b, ok := v.(flatbuffers.Builder); ok {
+		return b.Bytes[b.Head():], nil
+	}
+	if osm, ok := v.(proto.Message); ok {
+		data, err = proto.Marshal(osm)
+		return
+	}
+	return nil, fmt.Errorf("invalid type")
 }

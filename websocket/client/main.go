@@ -2,11 +2,13 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"time"
 
+	"github.com/d15johro/examensarbete-vt18/osmdecoder/fbsconv/fbs"
 	"github.com/d15johro/examensarbete-vt18/osmdecoder/pbconv/pb"
-	"github.com/d15johro/examensarbete-vt18/websocket/codec"
+	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/websocket"
 )
 
@@ -45,6 +47,7 @@ func main() {
 		conn:    conn,
 		request: make(chan int32),
 	}
+	c.conn.PayloadType = websocket.BinaryFrame
 	defer close(c.request)
 	go func() { c.request <- 0 }() // init write operation
 	go c.write()                   // spawn write function on a different user-space thread
@@ -68,23 +71,22 @@ func (c *client) read() {
 		data := buf[:n]                                                      // skip zeros
 		responseTimeDuration := time.Since(startAccessTime).Seconds() * 1000 // response time in ms
 		// deserialize data:
-		startDeserializationTime := time.Now() // start deserialization time clock
 		var pbOSM pb.OSM
-		if err = codec.PB.Unmarshal(data, websocket.BinaryFrame, &pbOSM); err != nil {
+		deserializationTime, err := deserializeGetTime(data, &pbOSM, deserialize)
+		if err != nil {
 			log.Println("read:", err)
 			break
 		}
-		deserializationDuration := time.Since(startDeserializationTime).Seconds() * 1000 // deserialization time in ms
-		accessTimeDuration := time.Since(startAccessTime).Seconds() * 1000               // access time in ms
+		accessTimeDuration := time.Since(startAccessTime).Seconds() * 1000 // access time in ms
 		// TODO: save metrics to a log file.
 		log.Printf("\n---\nmetrics:\n\tID: %d\n\taccess time: %fms\n\tresponse time %fms\n\tdeserialization time: %fms\n\tpbOSM.Generator: %s\n\tbytes read (data size): %d\n---",
 			pbOSM.Id,
 			accessTimeDuration,
 			responseTimeDuration,
-			deserializationDuration,
+			deserializationTime,
 			pbOSM.Generator,
 			n)
-		log.Println(pbOSM.Id)
+
 		c.request <- pbOSM.Id + 1
 	}
 }
@@ -105,4 +107,27 @@ func (c *client) write() {
 			break
 		}
 	}
+}
+
+func deserializeGetTime(data []byte, v interface{}, f func(data []byte, v interface{}) error) (ms float64, err error) {
+	start := time.Now()
+	err = f(data, v)
+	if err != nil {
+		return
+	}
+	elapsed := time.Since(start)
+	ms = elapsed.Seconds() * 1000
+	return
+}
+
+func deserialize(data []byte, v interface{}) error {
+	if _, ok := v.(fbs.OSM); ok {
+		v = fbs.GetRootAsOSM(data, 0)
+		return nil
+	}
+	if msg, ok := v.(proto.Message); ok {
+		return proto.Unmarshal(data, msg)
+	}
+
+	return fmt.Errorf("invalid type")
 }
