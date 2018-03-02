@@ -9,6 +9,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/flatbuffers/go"
+
+	"github.com/d15johro/examensarbete-vt18/osmdecoder/fbsconv"
 	"github.com/d15johro/examensarbete-vt18/osmdecoder/pbconv"
 	"github.com/golang/protobuf/proto"
 
@@ -32,7 +35,57 @@ func main() {
 }
 
 func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	handlePB(w, r)
+	handleFBS(w, r)
+}
+
+func handleFBS(w http.ResponseWriter, r *http.Request) {
+	// validate http method:
+	if r.Method != http.MethodGet {
+		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
+		return
+	}
+	// validate URL path:
+	segs := pathSegments(r.URL.Path)
+	log.Println(segs)
+	if len(segs) != 1 {
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	}
+	// validate and extract id from URL:
+	id, err := strconv.Atoi(segs[0])
+	if err != nil {
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	}
+	// decode .osm file depending on id:
+	file := "../../testdata/test_data" + fmt.Sprintf("%d", id%6) + ".osm"
+	OSM, err := osmdecoder.DecodeFile(file)
+	if err != nil {
+		log.Println("write:", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+	// make pb.OSM
+	startSerializationClock := time.Now()
+	builder := flatbuffers.NewBuilder(0)
+	err = fbsconv.Build(builder, OSM)
+	if err != nil {
+		log.Println("write:", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+	data := builder.Bytes[builder.Head():]
+	endDurationClock := time.Now()
+	serializationDuration := endDurationClock.Sub(startSerializationClock)
+	log.Println("serializationDuration", serializationDuration)
+	// write header
+	w.Header().Add("id", segs[0])
+	w.Header().Add("serializationDuration", serializationDuration.String())
+	w.WriteHeader(http.StatusOK)
+	_, err = w.Write(data)
+	if err != nil {
+		log.Fatalln(err)
+	}
 }
 
 func handlePB(w http.ResponseWriter, r *http.Request) {
