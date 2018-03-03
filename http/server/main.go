@@ -18,7 +18,10 @@ import (
 	"github.com/d15johro/examensarbete-vt18/osmdecoder"
 )
 
-var addr = flag.String("addr", ":8080", "the address to host the server")
+var (
+	addr                = flag.String("addr", ":8080", "the address to host the server")
+	serializationFormat = flag.String("sf", "fbs", "Serialization format")
+)
 
 type handler struct{}
 
@@ -31,14 +34,11 @@ func main() {
 		WriteTimeout:   10 * time.Second,
 		MaxHeaderBytes: http.DefaultMaxHeaderBytes, // ~2 MB
 	}
+	log.Println("running http server on", *addr)
 	log.Fatalln(srv.ListenAndServe())
 }
 
 func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	handlePB(w, r)
-}
-
-func handleFBS(w http.ResponseWriter, r *http.Request) {
 	// validate http method:
 	if r.Method != http.MethodGet {
 		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
@@ -46,7 +46,6 @@ func handleFBS(w http.ResponseWriter, r *http.Request) {
 	}
 	// validate URL path:
 	segs := pathSegments(r.URL.Path)
-	log.Println(segs)
 	if len(segs) != 1 {
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
@@ -59,87 +58,55 @@ func handleFBS(w http.ResponseWriter, r *http.Request) {
 	}
 	// decode .osm file depending on id:
 	file := "../../testdata/test_data" + fmt.Sprintf("%d", id%6) + ".osm"
-	OSM, err := osmdecoder.DecodeFile(file)
-	if err != nil {
-		log.Println("write:", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-	// make pb.OSM
-	startSerializationClock := time.Now()
-	builder := flatbuffers.NewBuilder(0)
-	err = fbsconv.Build(builder, OSM)
-	if err != nil {
-		log.Println("write:", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-	data := builder.Bytes[builder.Head():]
-	endDurationClock := time.Now()
-	serializationDuration := endDurationClock.Sub(startSerializationClock)
-	log.Println("serializationDuration", serializationDuration)
-	// write header
-	w.Header().Add("id", segs[0])
-	w.Header().Add("serializationDuration", serializationDuration.String())
-	w.WriteHeader(http.StatusOK)
-	_, err = w.Write(data)
-	if err != nil {
-		log.Fatalln(err)
-	}
-}
-
-func handlePB(w http.ResponseWriter, r *http.Request) {
-	// validate http method:
-	if r.Method != http.MethodGet {
-		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
-		return
-	}
-	// validate URL path:
-	segs := pathSegments(r.URL.Path)
-	log.Println(segs)
-	if len(segs) != 1 {
-		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-		return
-	}
-	// validate and extract id from URL:
-	id, err := strconv.Atoi(segs[0])
-	if err != nil {
-		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-		return
-	}
-	// decode .osm file depending on id:
-	file := "../../testdata/test_data" + fmt.Sprintf("%d", id%6) + ".osm"
-	OSM, err := osmdecoder.DecodeFile(file)
-	if err != nil {
-		log.Println("write:", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-	// make pb.OSM
-	startSerializationClock := time.Now()
-	pbOSM, err := pbconv.Make(OSM)
+	x, err := osmdecoder.DecodeFile(file)
 	if err != nil {
 		log.Println("write:", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 	// serialize:
-	data, err := proto.Marshal(pbOSM)
-	if err != nil {
-		log.Println("write:", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
+	var (
+		data                    []byte
+		startSerializationClock time.Time
+	)
+	switch *serializationFormat {
+	case "pb":
+		startSerializationClock = time.Now()
+		osm, err := pbconv.Make(x)
+		if err != nil {
+			log.Println("write:", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+		data, err = proto.Marshal(osm)
+		if err != nil {
+			log.Println("write:", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+	case "fbs":
+		startSerializationClock = time.Now()
+		builder := flatbuffers.NewBuilder(0)
+		err = fbsconv.Build(builder, x)
+		if err != nil {
+			log.Println("write:", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+		data = builder.Bytes[builder.Head():]
+	default:
+		log.Fatalln("serialization format not supported")
 	}
-	endDurationClock := time.Now()
-	serializationDuration := endDurationClock.Sub(startSerializationClock)
-	log.Println("serializationDuration", serializationDuration)
+	serializationDuration := time.Since(startSerializationClock)
 	// write header
 	w.Header().Add("id", segs[0])
 	w.Header().Add("serializationDuration", serializationDuration.String())
 	w.WriteHeader(http.StatusOK)
 	_, err = w.Write(data)
 	if err != nil {
-		log.Fatalln(err)
+		log.Println("write:", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
 	}
 }
 

@@ -15,7 +15,7 @@ import (
 	"github.com/golang/protobuf/proto"
 )
 
-var serializationFormat = flag.String("sf", "pb", "Serialization format")
+var serializationFormat = flag.String("sf", "fbs", "Serialization format")
 
 type metrics struct {
 	id                  int
@@ -69,7 +69,7 @@ func main() {
 		m.dataSize = len(data)
 		// deserialize data:
 		startDeserializationClock := time.Now()
-		var osm pb.OSM // change type depending on serialization format being used
+		var osm fbs.OSM // change type depending on serialization format being used
 		if err := deserialize(data, &osm); err != nil {
 			log.Fatalln(err)
 		}
