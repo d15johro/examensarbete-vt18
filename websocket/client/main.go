@@ -5,7 +5,9 @@ import (
 	"flag"
 	"log"
 	"math"
+	"time"
 
+	"github.com/d15johro/examensarbete-vt18/osmdecoder/fbsconv/fbs"
 	"github.com/gorilla/websocket"
 )
 
@@ -25,7 +27,9 @@ func main() {
 			log.Fatalln(err)
 		}
 	}()
+
 	for i := 0; i < 10; i++ {
+		// request data from server:
 		requestMessage := struct {
 			ID uint32 `json:"id"`
 		}{ID: uint32(i)}
@@ -33,21 +37,30 @@ func main() {
 			log.Println(err)
 			break
 		}
+		// read response data from server:
 		_, data, err := conn.ReadMessage()
 		if err != nil {
 			log.Println(err)
 			break
 		}
+		// extract id and serialization time from data:
 		id := extractUint32FromBytes(data, len(data)-4, len(data))
-		log.Println("id:", id)
 		if id != requestMessage.ID {
 			log.Println("ID from requestMessage doesn't match ID recieved from server")
 		}
 		serializationTime := extractFloat64FromBytes(data, len(data)-12, len(data)-4+1)
-		log.Println("sf:", serializationTime)
-		data = data[:8+4]
-		log.Println("data:", string(data))
-		log.Println("---")
+		data = data[:len(data)-8-4]
+		// deserialize data:
+		startDeserializationClock := time.Now()
+		osm := fbs.GetRootAsOSM(data, 0)
+		deserializationTime := time.Since(startDeserializationClock).Seconds() * 1000
+		// print collected metrics:
+		log.Printf("ID: %d, serialization time: %f, deserialization time: %f, #nodes: %d\n---\n",
+			id,
+			serializationTime,
+			deserializationTime,
+			osm.NodesLength(),
+		)
 	}
 }
 

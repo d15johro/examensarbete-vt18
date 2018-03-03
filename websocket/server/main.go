@@ -3,18 +3,23 @@ package main
 import (
 	"encoding/binary"
 	"flag"
+	"fmt"
 	"log"
 	"math"
 	"net/http"
+	"time"
 
+	"github.com/d15johro/examensarbete-vt18/osmdecoder"
+	"github.com/d15johro/examensarbete-vt18/osmdecoder/fbsconv"
+	flatbuffers "github.com/google/flatbuffers/go"
 	"github.com/gorilla/websocket"
 )
 
 var addr = flag.String("addr", "localhost:8080", "http server address")
 
 var upgrader = websocket.Upgrader{
-	ReadBufferSize:  1024 * 5,
-	WriteBufferSize: 1024 * 5,
+	ReadBufferSize:  1024 * 10,
+	WriteBufferSize: 1024 * 10,
 }
 
 func init() {
@@ -38,6 +43,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 	for {
+		// read client request:
 		var requestMessage struct {
 			ID uint32 `json:"id"`
 		}
@@ -45,12 +51,30 @@ func handler(w http.ResponseWriter, r *http.Request) {
 			log.Println(err)
 			break
 		}
-		var serializationTime float64 = 42
-
-		data := []byte("wsup")
+		// decode .osm file depending on id from request message:
+		file := "../../testdata/test_data" + fmt.Sprintf("%d", requestMessage.ID%6) + ".osm"
+		x, err := osmdecoder.DecodeFile(file)
+		if err != nil {
+			log.Println("write:", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+		log.Println("nodes l", len(x.Nodes))
+		// serialize:
+		startSerializationClock := time.Now()
+		builder := flatbuffers.NewBuilder(0)
+		err = fbsconv.Build(builder, x)
+		if err != nil {
+			log.Println("write:", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+		data := builder.Bytes[builder.Head():]
+		serializationTime := time.Since(startSerializationClock).Seconds() * 1000
+		// send data to client:
 		data = appendFloat64ToBytes(data, serializationTime)
 		data = appendUint32ToBytes(data, requestMessage.ID)
-		log.Println(requestMessage.ID)
+		log.Println(len(data))
 		if err := conn.WriteMessage(websocket.BinaryMessage, data); err != nil {
 			log.Println(err)
 			break
