@@ -71,13 +71,13 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	)
 	switch *serializationFormat {
 	case "pb":
-		startSerializationClock = time.Now()
 		osm, err := pbconv.Make(x)
 		if err != nil {
 			log.Println("write:", err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
+		startSerializationClock = time.Now()
 		data, err = proto.Marshal(osm)
 		if err != nil {
 			log.Println("write:", err)
