@@ -48,8 +48,8 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		var serializationTime float64 = 42
 
 		data := []byte("wsup")
-		data = appendUint32ToBytes(data, requestMessage.ID)
 		data = appendFloat64ToBytes(data, serializationTime)
+		data = appendUint32ToBytes(data, requestMessage.ID)
 		log.Println(requestMessage.ID)
 		if err := conn.WriteMessage(websocket.BinaryMessage, data); err != nil {
 			log.Println(err)

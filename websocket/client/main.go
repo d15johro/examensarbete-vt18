@@ -38,10 +38,13 @@ func main() {
 			log.Println(err)
 			break
 		}
-		serializationTime := extractFloat64FromBytes(data, len(data)-8, len(data))
-		log.Println("sf:", serializationTime)
-		id := extractUint32FromBytes(data, len(data)-12, len(data)-8+1)
+		id := extractUint32FromBytes(data, len(data)-4, len(data))
 		log.Println("id:", id)
+		if id != requestMessage.ID {
+			log.Println("ID from requestMessage doesn't match ID recieved from server")
+		}
+		serializationTime := extractFloat64FromBytes(data, len(data)-12, len(data)-4+1)
+		log.Println("sf:", serializationTime)
 		data = data[:8+4]
 		log.Println("data:", string(data))
 		log.Println("---")
