@@ -24,7 +24,7 @@ type metrics struct {
 	serializationTime   float64
 	deserializationTime float64
 	dataSize            int
-	filename            string
+	filepath            string
 }
 
 func init() {
@@ -32,7 +32,7 @@ func init() {
 }
 
 func main() {
-	m := metrics{filename: "./" + *serializationFormat + ".txt"}
+	m := metrics{filepath: "./" + *serializationFormat + ".txt"}
 	if err := m.setup(); err != nil {
 		log.Fatalln(err)
 	}
@@ -46,10 +46,11 @@ func main() {
 			log.Fatalln(err)
 		}
 		defer resp.Body.Close()
-		// validate response and get :
+		// validate response:
 		if resp.StatusCode != http.StatusOK {
 			log.Fatalln(http.StatusText(resp.StatusCode))
 		}
+		// collect metrics from response header:
 		id, err := strconv.Atoi(resp.Header.Get("id"))
 		if err != nil {
 			log.Fatalln(err)
@@ -75,7 +76,7 @@ func main() {
 		}
 		m.deserializationTime = time.Since(startDeserializationClock).Seconds() * 1000
 		m.accessTime = time.Since(startAccessClock).Seconds() * 1000
-		m.log(*serializationFormat + ".txt")
+		m.log()
 	}
 }
 
@@ -91,14 +92,14 @@ func deserialize(data []byte, v interface{}) (err error) {
 	return
 }
 
-func (m *metrics) log(filename string) {
+func (m *metrics) log() {
 	s := fmt.Sprintf("%d,%f,%f,%f,%f,%d\n",
 		m.id, m.accessTime,
 		m.responseTime,
 		m.serializationTime,
 		m.deserializationTime,
 		m.dataSize)
-	file, err := os.OpenFile(filename, os.O_APPEND|os.O_WRONLY, 0600)
+	file, err := os.OpenFile(m.filepath, os.O_APPEND|os.O_WRONLY, 0600)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -109,15 +110,15 @@ func (m *metrics) log(filename string) {
 }
 
 func (m *metrics) setup() error {
-	_, err := os.Stat(m.filename)
+	_, err := os.Stat(m.filepath)
 	if err != nil {
-		if !os.IsNotExist(err) { // error even though file exists
-			if err := os.Remove(m.filename); err != nil {
+		if !os.IsNotExist(err) {
+			if err := os.Remove(m.filepath); err != nil {
 				return err
 			}
 		}
 	}
-	_, err = os.Create(m.filename)
+	_, err = os.Create(m.filepath)
 	return err
 
 }
