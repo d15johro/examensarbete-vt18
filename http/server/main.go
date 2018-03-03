@@ -85,7 +85,7 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	case "fbs":
-		startSerializationClock = time.Now()
+		startSerializationClock = time.Now() // Unlike pb, fbs serialize data when building the buffer
 		builder := flatbuffers.NewBuilder(0)
 		err = fbsconv.Build(builder, x)
 		if err != nil {
