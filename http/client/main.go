@@ -13,9 +13,10 @@ import (
 	"github.com/d15johro/examensarbete-vt18/osmdecoder/fbsconv/fbs"
 	"github.com/d15johro/examensarbete-vt18/osmdecoder/pbconv/pb"
 	"github.com/golang/protobuf/proto"
+	flatbuffers "github.com/google/flatbuffers/go"
 )
 
-var serializationFormat = flag.String("sf", "fbs", "Serialization format")
+var serializationFormat = flag.String("sf", "pb", "Serialization format")
 
 type metrics struct {
 	id                  int
@@ -70,26 +71,27 @@ func main() {
 		m.dataSize = len(data)
 		// deserialize data:
 		startDeserializationClock := time.Now()
-		var osm fbs.OSM // change type depending on serialization format being used
-		if err := deserialize(data, &osm); err != nil {
-			log.Fatalln(err)
+		switch *serializationFormat {
+		case "pb":
+			osm := &pb.OSM{}
+			if err := proto.Unmarshal(data, osm); err != nil {
+				log.Println(err)
+				break
+			}
+			log.Println(osm.Copyright)
+		case "fbs":
+			offset := flatbuffers.UOffsetT(0)
+			n := flatbuffers.GetUOffsetT(data[offset:])
+			osm := &fbs.OSM{}
+			osm.Init(data, n+offset)
+			log.Println(string(osm.Copyright()))
+		default:
+			log.Fatalln("serialization format not supported")
 		}
 		m.deserializationTime = time.Since(startDeserializationClock).Seconds() * 1000
 		m.accessTime = time.Since(startAccessClock).Seconds() * 1000
 		m.log()
 	}
-}
-
-func deserialize(data []byte, v interface{}) (err error) {
-	if osm, ok := v.(*pb.OSM); ok {
-		return proto.Unmarshal(data, osm)
-	}
-	if _, ok := v.(*fbs.OSM); ok {
-		v = fbs.GetRootAsOSM(data, 0)
-		return
-	}
-	err = fmt.Errorf("deserialize: type not supported")
-	return
 }
 
 func (m *metrics) log() {
