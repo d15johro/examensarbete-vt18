@@ -78,7 +78,7 @@ func main() {
 				log.Println(err)
 				break
 			}
-			log.Println(osm.Copyright)
+			log.Println(osm.Attribution)
 		case "fbs":
 			offset := flatbuffers.UOffsetT(0)
 			n := flatbuffers.GetUOffsetT(data[offset:])

@@ -20,7 +20,7 @@ import (
 
 var (
 	addr                = flag.String("addr", ":8080", "the address to host the server")
-	serializationFormat = flag.String("sf", "fbs", "Serialization format")
+	serializationFormat = flag.String("sf", "pb", "Serialization format")
 )
 
 type handler struct{}

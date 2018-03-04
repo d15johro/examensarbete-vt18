@@ -4,15 +4,15 @@ package pb;
 // generate with "protoc --go_out=./pb osm.proto" in current dir.
 
 message OSM {
-    string version = 2;
-    string generator = 3;
-    string copyright = 4;
-    string attribution = 5;
-    string license = 6;
-    Bounds bounds = 7;
-    repeated Node nodes = 8;
-    repeated Way ways = 9;
-    repeated Relation relations = 10;
+    string version = 1;
+    string generator = 2;
+    string copyright = 3;
+    string attribution = 4;
+    string license = 5;
+    Bounds bounds = 6;
+    repeated Node nodes = 7;
+    repeated Way ways = 8;
+    repeated Relation relations = 9;
 }
 
 message Bounds {
