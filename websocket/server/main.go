@@ -11,11 +11,16 @@ import (
 
 	"github.com/d15johro/examensarbete-vt18/osmdecoder"
 	"github.com/d15johro/examensarbete-vt18/osmdecoder/fbsconv"
+	"github.com/d15johro/examensarbete-vt18/osmdecoder/pbconv"
+	"github.com/golang/protobuf/proto"
 	flatbuffers "github.com/google/flatbuffers/go"
 	"github.com/gorilla/websocket"
 )
 
-var addr = flag.String("addr", "localhost:8080", "http server address")
+var (
+	addr                = flag.String("addr", "localhost:8080", "http server address")
+	serializationFormat = flag.String("sf", "pb", "Serialization format")
+)
 
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024 * 10,
@@ -55,26 +60,44 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		file := "../../testdata/test_data" + fmt.Sprintf("%d", requestMessage.ID%6) + ".osm"
 		x, err := osmdecoder.DecodeFile(file)
 		if err != nil {
-			log.Println("write:", err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
+			log.Println(err)
+			break
 		}
-		log.Println("nodes l", len(x.Nodes))
 		// serialize:
-		startSerializationClock := time.Now()
-		builder := flatbuffers.NewBuilder(0)
-		err = fbsconv.Build(builder, x)
-		if err != nil {
-			log.Println("write:", err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
+		var (
+			data                    []byte
+			startSerializationClock time.Time
+		)
+		switch *serializationFormat {
+		case "pb":
+			osm, err := pbconv.Make(x)
+			if err != nil {
+				log.Println(err)
+				break
+			}
+			startSerializationClock = time.Now()
+			data, err = proto.Marshal(osm)
+			if err != nil {
+				log.Println(err)
+				break
+			}
+		case "fbs":
+			startSerializationClock = time.Now() // // Unlike pb, fbs serialize data when building the buffer
+			builder := flatbuffers.NewBuilder(0)
+			err = fbsconv.Build(builder, x)
+			if err != nil {
+				log.Println(err)
+				break
+			}
+			data = builder.Bytes[builder.Head():]
+		default:
+			log.Fatalln("serialization format not supported")
 		}
-		data := builder.Bytes[builder.Head():]
+
 		serializationTime := time.Since(startSerializationClock).Seconds() * 1000
 		// send data to client:
 		data = appendFloat64ToBytes(data, serializationTime)
 		data = appendUint32ToBytes(data, requestMessage.ID)
-		log.Println(len(data))
 		if err := conn.WriteMessage(websocket.BinaryMessage, data); err != nil {
 			log.Println(err)
 			break
@@ -82,22 +105,22 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func uin32ToBytes(i uint32) []byte {
+func uint32ToBytes(ui uint32) []byte {
 	bytes := make([]byte, 4)
-	binary.LittleEndian.PutUint32(bytes, i)
+	binary.LittleEndian.PutUint32(bytes, ui)
 	return bytes
 }
 
-func appendUint32ToBytes(data []byte, i uint32) []byte {
-	buf := uin32ToBytes(i)
+func appendUint32ToBytes(data []byte, ui uint32) []byte {
+	buf := uint32ToBytes(ui)
 	for i := 0; i < len(buf); i++ {
 		data = append(data, buf[i])
 	}
 	return data
 }
 
-func float64ToBytes(float float64) []byte {
-	bits := math.Float64bits(float)
+func float64ToBytes(f float64) []byte {
+	bits := math.Float64bits(f)
 	bytes := make([]byte, 8)
 	binary.LittleEndian.PutUint64(bytes, bits)
 	return bytes

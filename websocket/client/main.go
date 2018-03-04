@@ -3,15 +3,21 @@ package main
 import (
 	"encoding/binary"
 	"flag"
+	"fmt"
 	"log"
 	"math"
 	"time"
 
 	"github.com/d15johro/examensarbete-vt18/osmdecoder/fbsconv/fbs"
+	"github.com/d15johro/examensarbete-vt18/osmdecoder/pbconv/pb"
+	"github.com/golang/protobuf/proto"
 	"github.com/gorilla/websocket"
 )
 
-var dialURL = flag.String("du", "ws://localhost:8080/websocket", "url to dial websocket server")
+var (
+	dialURL             = flag.String("du", "ws://localhost:8080/websocket", "url to dial websocket server")
+	serializationFormat = flag.String("sf", "pb", "Serialization format")
+)
 
 func main() {
 	log.Println("dialing websocket server on", *dialURL)
@@ -52,16 +58,39 @@ func main() {
 		data = data[:len(data)-8-4]
 		// deserialize data:
 		startDeserializationClock := time.Now()
-		osm := fbs.GetRootAsOSM(data, 0)
+		var osm pb.OSM // change type depending on serialization format being used
+		if err := deserialize(data, &osm); err != nil {
+			log.Fatalln(err)
+		}
 		deserializationTime := time.Since(startDeserializationClock).Seconds() * 1000
 		// print collected metrics:
 		log.Printf("ID: %d, serialization time: %f, deserialization time: %f, #nodes: %d\n---\n",
 			id,
 			serializationTime,
 			deserializationTime,
-			osm.NodesLength(),
+			len(osm.Nodes),
 		)
 	}
+}
+
+func deserialize(data []byte, v interface{}) (err error) {
+	if osm, ok := v.(*pb.OSM); ok {
+		return proto.Unmarshal(data, osm)
+	}
+	if _, ok := v.(*fbs.OSM); ok {
+		v = fbs.GetRootAsOSM(data, 0)
+		return
+	}
+	err = fmt.Errorf("deserialize: type not supported")
+	return
+}
+
+func uint32FromBytes(bytes []byte) uint32 {
+	return binary.LittleEndian.Uint32(bytes)
+}
+
+func extractUint32FromBytes(data []byte, start, end int) uint32 {
+	return uint32FromBytes(data[start:end])
 }
 
 func extractFloat64FromBytes(data []byte, start, end int) float64 {
@@ -70,14 +99,6 @@ func extractFloat64FromBytes(data []byte, start, end int) float64 {
 
 func float64FromBytes(bytes []byte) float64 {
 	bits := binary.LittleEndian.Uint64(bytes)
-	float := math.Float64frombits(bits)
-	return float
-}
-
-func extractUint32FromBytes(data []byte, start, end int) uint32 {
-	return uint32FromBytes(data[start:end])
-}
-
-func uint32FromBytes(bytes []byte) uint32 {
-	return binary.LittleEndian.Uint32(bytes)
+	f := math.Float64frombits(bits)
+	return f
 }
