@@ -18,8 +18,7 @@ import (
 )
 
 var (
-	addr                = flag.String("addr", "localhost:8080", "http server address")
-	serializationFormat = flag.String("sf", "pb", "Serialization format")
+	addr = flag.String("addr", "localhost:8080", "http server address")
 )
 
 var upgrader = websocket.Upgrader{
@@ -50,7 +49,8 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	for {
 		// read client request:
 		var requestMessage struct {
-			ID uint32 `json:"id"`
+			ID                  uint32 `json:"id"`
+			SerializationFormat string `json:"serializationFormat"`
 		}
 		if err := conn.ReadJSON(&requestMessage); err != nil {
 			log.Println(err)
@@ -68,7 +68,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 			data                    []byte
 			startSerializationClock time.Time
 		)
-		switch *serializationFormat {
+		switch requestMessage.SerializationFormat {
 		case "pb":
 			osm, err := pbconv.Make(x)
 			if err != nil {
@@ -93,7 +93,6 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		default:
 			log.Fatalln("serialization format not supported")
 		}
-
 		serializationTime := time.Since(startSerializationClock).Seconds() * 1000
 		// send data to client:
 		data = appendFloat64ToBytes(data, serializationTime)
