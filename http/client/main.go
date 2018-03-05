@@ -38,8 +38,9 @@ func main() {
 		log.Fatalln(err)
 	}
 	c := http.Client{}
-	for i := 0; i < 15; i++ {
+	for i := 0; i < 14*10; i++ {
 		startAccessClock := time.Now()
+		startResponseClock := time.Now()
 		// send GET request to server:
 		url := fmt.Sprintf("http://localhost:8080/%d", i)
 		resp, err := c.Get(url)
@@ -67,7 +68,7 @@ func main() {
 		if err != nil {
 			log.Fatalln(err)
 		}
-		m.responseTime = time.Since(startAccessClock).Seconds() * 1000
+		m.responseTime = time.Since(startResponseClock).Seconds() * 1000
 		m.dataSize = len(data)
 		// deserialize data:
 		startDeserializationClock := time.Now()
@@ -78,19 +79,19 @@ func main() {
 				log.Println(err)
 				break
 			}
-			log.Println(osm.Attribution)
 		case "fbs":
 			offset := flatbuffers.UOffsetT(0)
 			n := flatbuffers.GetUOffsetT(data[offset:])
 			osm := &fbs.OSM{}
 			osm.Init(data, n+offset)
-			log.Println(string(osm.Copyright()))
 		default:
 			log.Fatalln("serialization format not supported")
 		}
 		m.deserializationTime = time.Since(startDeserializationClock).Seconds() * 1000
 		m.accessTime = time.Since(startAccessClock).Seconds() * 1000
 		m.log()
+		// print collected metrics to consol:
+		log.Printf("%+v\n", m)
 	}
 }
 
@@ -122,5 +123,4 @@ func (m *metrics) setup() error {
 	}
 	_, err = os.Create(m.filepath)
 	return err
-
 }

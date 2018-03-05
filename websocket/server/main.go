@@ -57,7 +57,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 		// decode .osm file depending on id from request message:
-		file := "../../testdata/test_data" + fmt.Sprintf("%d", requestMessage.ID%6) + ".osm"
+		file := "../../testdata/test_data" + fmt.Sprintf("%d", requestMessage.ID%12) + ".osm"
 		x, err := osmdecoder.DecodeFile(file)
 		if err != nil {
 			log.Println(err)

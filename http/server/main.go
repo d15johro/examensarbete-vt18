@@ -57,7 +57,7 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// decode .osm file depending on id:
-	file := "../../testdata/test_data" + fmt.Sprintf("%d", id%6) + ".osm"
+	file := "../../testdata/test_data" + fmt.Sprintf("%d", id%12) + ".osm"
 	x, err := osmdecoder.DecodeFile(file)
 	if err != nil {
 		log.Println("write:", err)
