@@ -16,8 +16,6 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-// TODO: mirror http metric logging
-
 var (
 	dialURL             = flag.String("du", "ws://localhost:8080/websocket", "url to dial websocket server")
 	serializationFormat = flag.String("sf", "pb", "Serialization format")
@@ -56,7 +54,7 @@ func main() {
 		}
 	}()
 	for i := 0; i < 14*10; i++ {
-		// request data from server:
+		// Request data from server:
 		startAccessClock := time.Now()
 		startResponseClock := time.Now()
 		requestMessage := struct {
@@ -67,14 +65,14 @@ func main() {
 			log.Println(err)
 			break
 		}
-		// read response data from server:
+		// Read response data from server:
 		_, data, err := conn.ReadMessage()
 		if err != nil {
 			log.Println(err)
 			break
 		}
 		m.responseTime = time.Since(startResponseClock).Seconds() * 1000
-		// extract id and serialization time from data:
+		// Extract id and serialization time from data:
 		m.id = extractUint32FromBytes(data, len(data)-4, len(data))
 		if m.id != requestMessage.ID {
 			log.Println("ID from requestMessage doesn't match ID recieved from server")
@@ -82,7 +80,7 @@ func main() {
 		m.serializationTime = extractFloat64FromBytes(data, len(data)-12, len(data)-4)
 		data = data[:len(data)-8-4]
 		m.dataSize = len(data)
-		// deserialize data:
+		// Deserialize data:
 		startDeserializationClock := time.Now()
 		switch *serializationFormat {
 		case "pb":
@@ -92,6 +90,8 @@ func main() {
 				break
 			}
 		case "fbs":
+			// Unlike pb, deserializing fbs basically means storing the raw binary data in a struct.
+			// Therefore, the deserialization time for fbs will probably always be 0ms.
 			offset := flatbuffers.UOffsetT(0)
 			n := flatbuffers.GetUOffsetT(data[offset:])
 			osm := &fbs.OSM{}
@@ -102,7 +102,7 @@ func main() {
 		m.deserializationTime = time.Since(startDeserializationClock).Seconds() * 1000
 		m.accessTime = time.Since(startAccessClock).Seconds() * 1000
 		m.log()
-		// print collected metrics to consol:
+		// Print collected metrics to consol:
 		log.Printf("%+v\n", m)
 	}
 }

@@ -38,21 +38,21 @@ func main() {
 		log.Fatalln(err)
 	}
 	c := http.Client{}
-	for i := 0; i < 14*10; i++ {
+	for i := 0; i < 13*10; i++ {
 		startAccessClock := time.Now()
 		startResponseClock := time.Now()
-		// send GET request to server:
+		// Send GET request to server:
 		url := fmt.Sprintf("http://localhost:8080/%d", i)
 		resp, err := c.Get(url)
 		if err != nil {
 			log.Fatalln(err)
 		}
 		defer resp.Body.Close()
-		// validate response:
+		// Validate response:
 		if resp.StatusCode != http.StatusOK {
 			log.Fatalln(http.StatusText(resp.StatusCode))
 		}
-		// collect metrics from response header:
+		// Collect metrics from response header:
 		id, err := strconv.Atoi(resp.Header.Get("id"))
 		if err != nil {
 			log.Fatalln(err)
@@ -63,14 +63,14 @@ func main() {
 			log.Fatalln(err)
 		}
 		m.serializationTime = serializationDuration.Seconds() * 1000
-		// read response data:
+		// Read response data:
 		data, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
 			log.Fatalln(err)
 		}
 		m.responseTime = time.Since(startResponseClock).Seconds() * 1000
 		m.dataSize = len(data)
-		// deserialize data:
+		// Deserialize data:
 		startDeserializationClock := time.Now()
 		switch *serializationFormat {
 		case "pb":
@@ -80,6 +80,8 @@ func main() {
 				break
 			}
 		case "fbs":
+			// Unlike pb, deserializing fbs basically means storing the raw binary data in a struct.
+			// Therefore, the deserialization time for fbs will probably always be 0ms.
 			offset := flatbuffers.UOffsetT(0)
 			n := flatbuffers.GetUOffsetT(data[offset:])
 			osm := &fbs.OSM{}
@@ -90,7 +92,7 @@ func main() {
 		m.deserializationTime = time.Since(startDeserializationClock).Seconds() * 1000
 		m.accessTime = time.Since(startAccessClock).Seconds() * 1000
 		m.log()
-		// print collected metrics to consol:
+		// Print collected metrics to consol:
 		log.Printf("%+v\n", m)
 	}
 }

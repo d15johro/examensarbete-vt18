@@ -39,32 +39,32 @@ func main() {
 }
 
 func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	// validate http method:
+	// Validate http method:
 	if r.Method != http.MethodGet {
 		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 		return
 	}
-	// validate URL path:
+	// Validate URL path:
 	segs := pathSegments(r.URL.Path)
 	if len(segs) != 1 {
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
-	// extract adn validate id from path segments:
+	// Extract and validate id from path segments:
 	id, err := strconv.Atoi(segs[0])
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
-	// decode .osm file depending on id:
-	file := "../../testdata/test_data" + fmt.Sprintf("%d", id%12) + ".osm"
+	// Decode .osm file depending on id:
+	file := "../../testdata/test_data" + fmt.Sprintf("%d", id%12) + ".osm" // id mod 12 since we have filenames suffixed with a number ranging from 0 to 12
 	x, err := osmdecoder.DecodeFile(file)
 	if err != nil {
 		log.Println("write:", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
-	// serialize:
+	// Serialize object:
 	var (
 		data                    []byte
 		startSerializationClock time.Time
@@ -85,7 +85,11 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	case "fbs":
-		startSerializationClock = time.Now() // Unlike pb, fbs serialize data when building the buffer
+		// Since flatbuffers already stores data in a "serialized" form, serialization basically
+		// means getting a pointer to the internal storage. Therefore, unlike pb where we start the
+		// serialize clock after the pb.OSM objekt has been structured, full build/serialize cycle
+		// is measured.
+		startSerializationClock = time.Now()
 		builder := flatbuffers.NewBuilder(0)
 		err = fbsconv.Build(builder, x)
 		if err != nil {
@@ -98,7 +102,7 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		log.Fatalln("serialization format not supported")
 	}
 	serializationDuration := time.Since(startSerializationClock)
-	// write header
+	// Write header and data to response:
 	w.Header().Add("id", segs[0])
 	w.Header().Add("serializationDuration", serializationDuration.String())
 	w.WriteHeader(http.StatusOK)

@@ -47,7 +47,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 	for {
-		// read client request:
+		// Read client request:
 		var requestMessage struct {
 			ID                  uint32 `json:"id"`
 			SerializationFormat string `json:"serializationFormat"`
@@ -56,14 +56,14 @@ func handler(w http.ResponseWriter, r *http.Request) {
 			log.Println(err)
 			break
 		}
-		// decode .osm file depending on id from request message:
-		file := "../../testdata/test_data" + fmt.Sprintf("%d", requestMessage.ID%12) + ".osm"
+		// Decode .osm file depending on id from request message:
+		file := "../../testdata/test_data" + fmt.Sprintf("%d", requestMessage.ID%12) + ".osm" // id mod 12 since we have filenames suffixed with a number ranging from 0 to 12
 		x, err := osmdecoder.DecodeFile(file)
 		if err != nil {
 			log.Println(err)
 			break
 		}
-		// serialize:
+		// Serialize object:
 		var (
 			data                    []byte
 			startSerializationClock time.Time
@@ -82,7 +82,11 @@ func handler(w http.ResponseWriter, r *http.Request) {
 				break
 			}
 		case "fbs":
-			startSerializationClock = time.Now() // // Unlike pb, fbs serialize data when building the buffer
+			// Since flatbuffers already stores data in a "serialized" form, serialization basically
+			// means getting a pointer to the internal storage. Therefore, unlike pb where we start the
+			// serialize clock after the pb.OSM objekt has been structured, full build/serialize cycle
+			// is measured.
+			startSerializationClock = time.Now()
 			builder := flatbuffers.NewBuilder(0)
 			err = fbsconv.Build(builder, x)
 			if err != nil {
@@ -94,7 +98,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 			log.Fatalln("serialization format not supported")
 		}
 		serializationTime := time.Since(startSerializationClock).Seconds() * 1000
-		// send data to client:
+		// Send data to client:
 		data = appendFloat64ToBytes(data, serializationTime)
 		data = appendUint32ToBytes(data, requestMessage.ID)
 		if err := conn.WriteMessage(websocket.BinaryMessage, data); err != nil {
