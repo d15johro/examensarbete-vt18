@@ -6,9 +6,9 @@ This is an ANOVA analysis of access time, response time, de-/serialization time,
 
 ### Anova Table
 
-![Access Time Anova Table](img/access_time_anova_table.png)
+![Access Time Anova Table](http://wwwlab.iit.his.se/d15johro/examensarbete/pilot_study/without_print/img/access_time_anova_table.PNG)
 
 ### Clustered Columns Diagram
 
-![Access Time Clustered Columns Diagram](img/access_time_clustered_columns_diagram)
+![Access Time Clustered Columns Diagram](http://wwwlab.iit.his.se/d15johro/examensarbete/pilot_study/without_print/img/access_time_clustered_columns_diagram.PNG)
 
