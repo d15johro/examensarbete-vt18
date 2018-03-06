@@ -84,7 +84,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		case "fbs":
 			// Since flatbuffers already stores data in a "serialized" form, serialization basically
 			// means getting a pointer to the internal storage. Therefore, unlike pb where we start the
-			// serialize clock after the pb.OSM objekt has been structured, full build/serialize cycle
+			// serialize clock after the pb.OSM object has been structured, full build/serialize cycle
 			// is measured.
 			startSerializationClock = time.Now()
 			builder := flatbuffers.NewBuilder(0)

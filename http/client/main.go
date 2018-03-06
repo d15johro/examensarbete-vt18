@@ -38,7 +38,7 @@ func main() {
 		log.Fatalln(err)
 	}
 	c := http.Client{}
-	for i := 0; i < 13*10; i++ {
+	for i := 0; i < 1000; i++ {
 		startAccessClock := time.Now()
 		startResponseClock := time.Now()
 		// Send GET request to server:
@@ -91,9 +91,9 @@ func main() {
 		}
 		m.deserializationTime = time.Since(startDeserializationClock).Seconds() * 1000
 		m.accessTime = time.Since(startAccessClock).Seconds() * 1000
-		m.log()
-		// Print collected metrics to consol:
-		log.Printf("%+v\n", m)
+		if i > 499 {
+			m.log()
+		}
 	}
 }
 

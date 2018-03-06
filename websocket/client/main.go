@@ -53,7 +53,7 @@ func main() {
 			log.Fatalln(err)
 		}
 	}()
-	for i := 0; i < 14*10; i++ {
+	for i := 0; i < 1000; i++ {
 		// Request data from server:
 		startAccessClock := time.Now()
 		startResponseClock := time.Now()
@@ -101,9 +101,9 @@ func main() {
 		}
 		m.deserializationTime = time.Since(startDeserializationClock).Seconds() * 1000
 		m.accessTime = time.Since(startAccessClock).Seconds() * 1000
-		m.log()
-		// Print collected metrics to consol:
-		log.Printf("%+v\n", m)
+		if i > 499 {
+			m.log()
+		}
 	}
 }
 
