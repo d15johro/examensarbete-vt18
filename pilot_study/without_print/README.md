@@ -8,7 +8,10 @@ This is an ANOVA analysis of access time, response time, de-/serialization time,
 
 ![Access Time Anova Table](http://wwwlab.iit.his.se/d15johro/examensarbete/pilot_study/without_print/img/access_time_anova_table.PNG)
 
-### Clustered Columns Diagram
+#### Clustered Columns Diagram
 
 ![Access Time Clustered Columns Diagram](http://wwwlab.iit.his.se/d15johro/examensarbete/pilot_study/without_print/img/access_time_clustered_columns_diagram.PNG)
 
+### Descriptive Statistics
+
+![Descriptive Statistics](http://wwwlab.iit.his.se/d15johro/examensarbete/pilot_study/without_print/img/descriptive_statistics.PNG)
