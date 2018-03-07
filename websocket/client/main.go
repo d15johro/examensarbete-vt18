@@ -36,7 +36,7 @@ func init() {
 }
 
 func main() {
-	m := metrics{filepath: "./" + *serializationFormat + ".txt"}
+	m := metrics{filepath: "./websocket_" + *serializationFormat + ".txt"}
 	if err := m.setup(); err != nil {
 		log.Fatalln(err)
 	}

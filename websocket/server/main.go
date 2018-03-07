@@ -57,7 +57,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 		// Decode .osm file depending on id from request message:
-		file := "../../testdata/test_data" + fmt.Sprintf("%d", requestMessage.ID%12) + ".osm" // id mod 12 since we have filenames suffixed with a number ranging from 0 to 12
+		file := "../../data/maps" + fmt.Sprintf("%d", requestMessage.ID%29) + ".osm" // id mod 29 since we have filenames suffixed with a number ranging from 0 to 29
 		x, err := osmdecoder.DecodeFile(file)
 		if err != nil {
 			log.Println(err)

@@ -57,7 +57,7 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Decode .osm file depending on id:
-	file := "../../testdata/test_data" + fmt.Sprintf("%d", id%12) + ".osm" // id mod 12 since we have filenames suffixed with a number ranging from 0 to 12
+	file := "../../data/maps" + fmt.Sprintf("%d", id%29) + ".osm" // id mod 29 since we have filenames suffixed with a number ranging from 0 to 29
 	x, err := osmdecoder.DecodeFile(file)
 	if err != nil {
 		log.Println("write:", err)
