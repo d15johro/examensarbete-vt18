@@ -18,7 +18,6 @@ import (
 
 var (
 	serializationFormat = flag.String("sf", "pb", "Serialization format")
-	nFiles              = flag.Int("nf", 10, "# of files")
 )
 
 type metrics struct {
@@ -42,7 +41,7 @@ func main() {
 		log.Fatalln(err)
 	}
 	c := http.Client{}
-	for i := 0; i < (*nFiles)*(*nFiles); i++ { // experimental
+	for i := 0; i < 10; i++ { // experimental
 		log.Println(i)
 		startAccessClock := time.Now()
 		startResponseClock := time.Now()

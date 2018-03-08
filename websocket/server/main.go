@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"math"
 	"net/http"
@@ -18,7 +19,9 @@ import (
 )
 
 var (
-	addr = flag.String("addr", "localhost:8080", "http server address")
+	addr          = flag.String("addr", "localhost:8080", "http server address")
+	mapsDir       = "../../data/maps/"
+	numberOfFiles uint32
 )
 
 var upgrader = websocket.Upgrader{
@@ -28,9 +31,15 @@ var upgrader = websocket.Upgrader{
 
 func init() {
 	flag.Parse()
+	var err error
+	numberOfFiles, err = fileCount(mapsDir)
+	if err != nil {
+		log.Fatalln(err)
+	}
 }
 
 func main() {
+	log.Println(numberOfFiles)
 	http.HandleFunc("/websocket", handler)
 	log.Println("server listening on", *addr)
 	log.Fatalln(http.ListenAndServe(*addr, nil))
@@ -51,14 +60,13 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		var requestMessage struct {
 			ID                  uint32 `json:"id"`
 			SerializationFormat string `json:"serializationFormat"`
-			NumberOfFiles       uint32 `json:"numberOfFiles"`
 		}
 		if err := conn.ReadJSON(&requestMessage); err != nil {
 			log.Println(err)
 			break
 		}
 		// Decode .osm file depending on id from request message:
-		file := "../../data/maps/map" + fmt.Sprintf("%d", requestMessage.ID%requestMessage.NumberOfFiles) + ".osm"
+		file := mapsDir + "map" + fmt.Sprintf("%d", requestMessage.ID%numberOfFiles) + ".osm"
 		x, err := osmdecoder.DecodeFile(file)
 		if err != nil {
 			log.Println(err)
@@ -143,4 +151,18 @@ func appendFloat64ToBytes(data []byte, f float64) []byte {
 		data = append(data, buf[i])
 	}
 	return data
+}
+
+func fileCount(dirpath string) (uint32, error) {
+	i := 0
+	files, err := ioutil.ReadDir(dirpath)
+	if err != nil {
+		return 0, err
+	}
+	for _, file := range files {
+		if !file.IsDir() {
+			i++
+		}
+	}
+	return uint32(i), nil
 }

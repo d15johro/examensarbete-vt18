@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"strconv"
@@ -21,13 +22,23 @@ import (
 var (
 	addr                = flag.String("addr", ":8080", "the address to host the server")
 	serializationFormat = flag.String("sf", "pb", "Serialization format")
-	nFiles              = flag.Int("nf", 10, "# of files")
+	mapsDir             = "../../data/maps/"
+	numberOfFiles       uint32
 )
 
 type handler struct{}
 
-func main() {
+func init() {
 	flag.Parse()
+	var err error
+	numberOfFiles, err = fileCount(mapsDir)
+	if err != nil {
+		log.Fatalln(err)
+	}
+}
+
+func main() {
+	log.Println(numberOfFiles)
 	srv := &http.Server{
 		Addr:           *addr,
 		Handler:        &handler{},
@@ -58,7 +69,7 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Decode .osm file depending on id:
-	file := "../../data/maps/map" + fmt.Sprintf("%d", id%(*nFiles)) + ".osm"
+	file := mapsDir + "map" + fmt.Sprintf("%d", uint32(id)%numberOfFiles) + ".osm"
 	x, err := osmdecoder.DecodeFile(file)
 	if err != nil {
 		log.Println("write:", err)
@@ -124,4 +135,18 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func pathSegments(p string) []string {
 	return strings.Split(strings.Trim(p, "/"), "/")
+}
+
+func fileCount(dirpath string) (uint32, error) {
+	i := 0
+	files, err := ioutil.ReadDir(dirpath)
+	if err != nil {
+		return 0, err
+	}
+	for _, file := range files {
+		if !file.IsDir() {
+			i++
+		}
+	}
+	return uint32(i), nil
 }
