@@ -1,3 +1,4 @@
+// Package fs contains filesystem util functions for the experiment.
 package fs
 
 import "io/ioutil"

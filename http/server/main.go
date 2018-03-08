@@ -9,12 +9,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/flatbuffers/go"
-
+	"github.com/d15johro/examensarbete-vt18/expcodec"
 	"github.com/d15johro/examensarbete-vt18/fs"
-	"github.com/d15johro/examensarbete-vt18/osmdecoder/fbsconv"
 	"github.com/d15johro/examensarbete-vt18/osmdecoder/pbconv"
-	"github.com/golang/protobuf/proto"
+	flatbuffers "github.com/google/flatbuffers/go"
 
 	"github.com/d15johro/examensarbete-vt18/osmdecoder"
 )
@@ -94,9 +92,9 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		structuringDuration = time.Since(startStructuringClock)
 		startSerializationClock = time.Now()
-		data, err = proto.Marshal(osm)
+		data, err = expcodec.SerializePB(osm)
 		if err != nil {
-			log.Println("write:", err)
+			log.Println(err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
@@ -108,13 +106,12 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		startStructuringClock = time.Now()
 		startSerializationClock = time.Now()
 		builder := flatbuffers.NewBuilder(0)
-		err = fbsconv.Build(builder, x)
+		data, err = expcodec.SerializeFBS(builder, x)
 		if err != nil {
-			log.Println("write:", err)
+			log.Println(err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
-		data = builder.Bytes[builder.Head():]
 		structuringDuration = time.Since(startStructuringClock) // structuring duration will be the same as serialization duration
 	default:
 		log.Fatalln("serialization format not supported")

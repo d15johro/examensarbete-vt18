@@ -9,11 +9,10 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/d15johro/examensarbete-vt18/expcodec"
 	"github.com/d15johro/examensarbete-vt18/fs"
 	"github.com/d15johro/examensarbete-vt18/osmdecoder"
-	"github.com/d15johro/examensarbete-vt18/osmdecoder/fbsconv"
 	"github.com/d15johro/examensarbete-vt18/osmdecoder/pbconv"
-	"github.com/golang/protobuf/proto"
 	flatbuffers "github.com/google/flatbuffers/go"
 	"github.com/gorilla/websocket"
 )
@@ -89,7 +88,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 			}
 			structuringTime = time.Since(startStructuringClock).Seconds() * 1000
 			startSerializationClock = time.Now()
-			data, err = proto.Marshal(osm)
+			data, err = expcodec.SerializePB(osm)
 			if err != nil {
 				log.Println(err)
 				break
@@ -98,16 +97,15 @@ func handler(w http.ResponseWriter, r *http.Request) {
 			// Since flatbuffers already stores data in a "serialized" form, serialization basically
 			// means getting a pointer to the internal storage. Therefore, unlike pb where we start the
 			// serialize clock after the pb.OSM object has been structured, full build/serialize cycle
-			// is measured.
+			// is measured. This is done in osmcodec.SerializeFBS(x *osmdecoder.OSM).
 			startStructuringClock = time.Now()
 			startSerializationClock = time.Now()
 			builder := flatbuffers.NewBuilder(0)
-			err = fbsconv.Build(builder, x)
+			data, err = expcodec.SerializeFBS(builder, x)
 			if err != nil {
 				log.Println(err)
 				break
 			}
-			data = builder.Bytes[builder.Head():]
 			structuringTime = time.Since(startStructuringClock).Seconds() * 1000 // structuring time will be the same as serialization time
 		default:
 			log.Fatalln("serialization format not supported")
