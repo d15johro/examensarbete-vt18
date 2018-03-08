@@ -27,6 +27,7 @@ type metrics struct {
 	responseTime        float64
 	serializationTime   float64
 	deserializationTime float64
+	structuringTime     float64
 	dataSize            int
 	filepath            string
 }
@@ -67,6 +68,11 @@ func main() {
 			log.Fatalln(err)
 		}
 		m.serializationTime = serializationDuration.Seconds() * 1000
+		structuringDuration, err := time.ParseDuration(resp.Header.Get("structuringDuration"))
+		if err != nil {
+			log.Fatalln(err)
+		}
+		m.structuringTime = structuringDuration.Seconds() * 1000
 		// Read response data:
 		data, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
@@ -101,11 +107,13 @@ func main() {
 }
 
 func (m *metrics) log() {
-	s := fmt.Sprintf("%d,%f,%f,%f,%f,%d\n",
-		m.id, m.accessTime,
+	s := fmt.Sprintf("%d,%f,%f,%f,%f,%f,%d\n",
+		m.id,
+		m.accessTime,
 		m.responseTime,
 		m.serializationTime,
 		m.deserializationTime,
+		m.structuringTime,
 		m.dataSize)
 	file, err := os.OpenFile(m.filepath, os.O_APPEND|os.O_WRONLY, 0600)
 	if err != nil {

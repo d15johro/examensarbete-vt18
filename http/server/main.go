@@ -58,7 +58,7 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Decode .osm file depending on id:
-	file := "../../data/maps/map" + fmt.Sprintf("%d", id%(*nFiles-1)) + ".osm"
+	file := "../../data/maps/map" + fmt.Sprintf("%d", id%(*nFiles)) + ".osm"
 	x, err := osmdecoder.DecodeFile(file)
 	if err != nil {
 		log.Println("write:", err)
@@ -69,15 +69,19 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var (
 		data                    []byte
 		startSerializationClock time.Time
+		startStructuringClock   time.Time
+		structuringDuration     time.Duration
 	)
 	switch *serializationFormat {
 	case "pb":
+		startStructuringClock = time.Now()
 		osm, err := pbconv.Make(x)
 		if err != nil {
 			log.Println("write:", err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
+		structuringDuration = time.Since(startStructuringClock)
 		startSerializationClock = time.Now()
 		data, err = proto.Marshal(osm)
 		if err != nil {
@@ -90,6 +94,7 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		// means getting a pointer to the internal storage. Therefore, unlike pb where we start the
 		// serialize clock after the pb.OSM object has been structured, full build/serialize cycle
 		// is measured.
+		startStructuringClock = time.Now()
 		startSerializationClock = time.Now()
 		builder := flatbuffers.NewBuilder(0)
 		err = fbsconv.Build(builder, x)
@@ -99,6 +104,7 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		data = builder.Bytes[builder.Head():]
+		structuringDuration = time.Since(startStructuringClock) // structuring duration will be the same as serialization duration
 	default:
 		log.Fatalln("serialization format not supported")
 	}
@@ -106,6 +112,7 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Write header and data to response:
 	w.Header().Add("id", segs[0])
 	w.Header().Add("serializationDuration", serializationDuration.String())
+	w.Header().Add("structuringDuration", structuringDuration.String())
 	w.WriteHeader(http.StatusOK)
 	_, err = w.Write(data)
 	if err != nil {

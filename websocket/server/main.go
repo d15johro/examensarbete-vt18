@@ -58,7 +58,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 		// Decode .osm file depending on id from request message:
-		file := "../../data/maps/map" + fmt.Sprintf("%d", requestMessage.ID%(requestMessage.NumberOfFiles-1)) + ".osm"
+		file := "../../data/maps/map" + fmt.Sprintf("%d", requestMessage.ID%requestMessage.NumberOfFiles) + ".osm"
 		x, err := osmdecoder.DecodeFile(file)
 		if err != nil {
 			log.Println(err)
@@ -68,14 +68,18 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		var (
 			data                    []byte
 			startSerializationClock time.Time
+			startStructuringClock   time.Time
+			structuringTime         float64
 		)
 		switch requestMessage.SerializationFormat {
 		case "pb":
+			startStructuringClock = time.Now()
 			osm, err := pbconv.Make(x)
 			if err != nil {
 				log.Println(err)
 				break
 			}
+			structuringTime = time.Since(startStructuringClock).Seconds() * 1000
 			startSerializationClock = time.Now()
 			data, err = proto.Marshal(osm)
 			if err != nil {
@@ -87,6 +91,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 			// means getting a pointer to the internal storage. Therefore, unlike pb where we start the
 			// serialize clock after the pb.OSM object has been structured, full build/serialize cycle
 			// is measured.
+			startStructuringClock = time.Now()
 			startSerializationClock = time.Now()
 			builder := flatbuffers.NewBuilder(0)
 			err = fbsconv.Build(builder, x)
@@ -95,11 +100,13 @@ func handler(w http.ResponseWriter, r *http.Request) {
 				break
 			}
 			data = builder.Bytes[builder.Head():]
+			structuringTime = time.Since(startStructuringClock).Seconds() * 1000 // structuring time will be the same as serialization time
 		default:
 			log.Fatalln("serialization format not supported")
 		}
 		serializationTime := time.Since(startSerializationClock).Seconds() * 1000
 		// Send data to client:
+		data = appendFloat64ToBytes(data, structuringTime)
 		data = appendFloat64ToBytes(data, serializationTime)
 		data = appendUint32ToBytes(data, requestMessage.ID)
 		if err := conn.WriteMessage(websocket.BinaryMessage, data); err != nil {

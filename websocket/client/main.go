@@ -28,6 +28,7 @@ type metrics struct {
 	responseTime        float64
 	serializationTime   float64
 	deserializationTime float64
+	structuringTime     float64
 	dataSize            int
 	filepath            string
 }
@@ -75,12 +76,14 @@ func main() {
 			break
 		}
 		m.responseTime = time.Since(startResponseClock).Seconds() * 1000
-		// Extract id and serialization time from data:
+		// Extract structuring and serialization time from data:
+		m.structuringTime = extractFloat64FromBytes(data, len(data)-4-8-8, len(data)-4-8)
+		m.serializationTime = extractFloat64FromBytes(data, len(data)-4-8, len(data)-4)
+		// Extract and validate id from data:
 		m.id = extractUint32FromBytes(data, len(data)-4, len(data))
 		if m.id != requestMessage.ID {
 			log.Println("ID from requestMessage doesn't match ID recieved from server")
 		}
-		m.serializationTime = extractFloat64FromBytes(data, len(data)-12, len(data)-4)
 		data = data[:len(data)-8-4]
 		m.dataSize = len(data)
 		// Deserialize data:
@@ -129,11 +132,12 @@ func float64FromBytes(bytes []byte) float64 {
 }
 
 func (m *metrics) log() {
-	s := fmt.Sprintf("%d,%f,%f,%f,%f,%d\n",
+	s := fmt.Sprintf("%d,%f,%f,%f,%f,%f,%d\n",
 		m.id, m.accessTime,
 		m.responseTime,
 		m.serializationTime,
 		m.deserializationTime,
+		m.structuringTime,
 		m.dataSize)
 	file, err := os.OpenFile(m.filepath, os.O_APPEND|os.O_WRONLY, 0600)
 	if err != nil {
