@@ -141,11 +141,12 @@ func (m *metrics) setup() error {
 // want access to all data we measure deserialization for fbs as time it takes to access all data
 // from memory. This means that we have to call all the getter methods for all elements in the map.
 func deserializeFbs(data []byte) error {
+	// osm:
 	offset := flatbuffers.UOffsetT(0)
 	n := flatbuffers.GetUOffsetT(data[offset:])
 	osm := &fbs.OSM{}
-	// osm attributes:
 	osm.Init(data, n+offset)
+	// osm attributes:
 	osm.Attribution()
 	osm.Copyright()
 	osm.Generator()
