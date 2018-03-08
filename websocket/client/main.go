@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"log"
 	"math"
-	"os"
 	"time"
 
+	"github.com/d15johro/examensarbete-vt18/metrics"
 	"github.com/d15johro/examensarbete-vt18/osmdecoder/fbsconv/fbs"
 	"github.com/d15johro/examensarbete-vt18/osmdecoder/pbconv/pb"
 	"github.com/golang/protobuf/proto"
@@ -21,24 +21,14 @@ var (
 	serializationFormat = flag.String("sf", "pb", "Serialization format")
 )
 
-type metrics struct {
-	id                  uint32
-	accessTime          float64
-	responseTime        float64
-	serializationTime   float64
-	deserializationTime float64
-	structuringTime     float64
-	dataSize            int
-	filepath            string
-}
-
 func init() {
 	flag.Parse()
 }
 
 func main() {
-	m := metrics{filepath: "./websocket_" + *serializationFormat + ".txt"}
-	if err := m.setup(); err != nil {
+	m := metrics.New()
+	m.Filepath = "./websocket_" + *serializationFormat + ".txt"
+	if err := m.Setup(); err != nil {
 		log.Fatalln(err)
 	}
 	log.Printf("dialing websocket server on %s using %s as serialisering format...", *dialURL, *serializationFormat)
@@ -73,19 +63,19 @@ func main() {
 			log.Println(err)
 			break
 		}
-		m.responseTime = time.Since(startResponseClock).Seconds() * 1000
+		m.ResponseTime = time.Since(startResponseClock).Seconds() * 1000
 		// Extract structuring and serialization time from data:
-		m.structuringTime = extractFloat64FromBytes(data, len(data)-4-8-8, len(data)-4-8)
-		m.serializationTime = extractFloat64FromBytes(data, len(data)-4-8, len(data)-4)
+		m.StructuringTime = extractFloat64FromBytes(data, len(data)-4-8-8, len(data)-4-8)
+		m.SerializationTime = extractFloat64FromBytes(data, len(data)-4-8, len(data)-4)
 		// Extract and validate id from data:
-		m.id = extractUint32FromBytes(data, len(data)-4, len(data))
-		if m.id != requestMessage.ID {
+		m.ID = extractUint32FromBytes(data, len(data)-4, len(data))
+		if m.ID != requestMessage.ID {
 			log.Println("ID from requestMessage doesn't match ID recieved from server")
 			break
 		}
 		// Extract osm data from data:
 		data = data[:len(data)-8-8-4]
-		m.dataSize = len(data)
+		m.DataSize = len(data)
 		// Deserialize data:
 		startDeserializationClock := time.Now()
 		switch *serializationFormat {
@@ -103,10 +93,10 @@ func main() {
 		default:
 			log.Fatalln("serialization format not supported")
 		}
-		m.deserializationTime = time.Since(startDeserializationClock).Seconds() * 1000
-		m.accessTime = time.Since(startAccessClock).Seconds() * 1000
+		m.DeserializationTime = time.Since(startDeserializationClock).Seconds() * 1000
+		m.AccessTime = time.Since(startAccessClock).Seconds() * 1000
 
-		m.log()
+		m.Log()
 
 	}
 }
@@ -123,37 +113,6 @@ func float64FromBytes(bytes []byte) float64 {
 	bits := binary.LittleEndian.Uint64(bytes)
 	f := math.Float64frombits(bits)
 	return f
-}
-
-func (m *metrics) log() {
-	s := fmt.Sprintf("%d,%f,%f,%f,%f,%f,%d\n",
-		m.id, m.accessTime,
-		m.responseTime,
-		m.serializationTime,
-		m.deserializationTime,
-		m.structuringTime,
-		m.dataSize)
-	file, err := os.OpenFile(m.filepath, os.O_APPEND|os.O_WRONLY, 0600)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	defer file.Close()
-	if _, err = file.WriteString(s); err != nil {
-		log.Fatalln(err)
-	}
-}
-
-func (m *metrics) setup() error {
-	_, err := os.Stat(m.filepath)
-	if err != nil {
-		if !os.IsNotExist(err) {
-			if err := os.Remove(m.filepath); err != nil {
-				return err
-			}
-		}
-	}
-	_, err = os.Create(m.filepath)
-	return err
 }
 
 // Unlike pb, deserializing fbs basically means storing the raw binary data in a struct.
