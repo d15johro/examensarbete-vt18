@@ -7,7 +7,7 @@ Bounding box (latitudes and longitudes) for each selected city was collected fro
 ## Inside maps directory
 
 Filename   |     City    | Original Size (.osm XML file)  | North Latitude | South Latitude | East Longitude | West Longitude
----------- | ----------- | --------------------------------------------------------------------------------------------------
+---------- | ----------- | ------------------------------ | -------------- | -------------- | -------------- | --------------
 map0.osm   | Göteborg    | 435,200 KB                     | 57.863055      | 57.538929      | 12.193316      | 11.594357
 map1.osm   | Stockholm   | 324,663 KB                     | 59.427841      | 59.224443      | 18.198229      | 17.765876
 map2.osm   | Malmö       | 96,587 KB                      | 55.639951      | 55.500386      | 13.150761      | 12.881184
