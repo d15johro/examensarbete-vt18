@@ -16,7 +16,10 @@ import (
 	flatbuffers "github.com/google/flatbuffers/go"
 )
 
-var serializationFormat = flag.String("sf", "pb", "Serialization format")
+var (
+	serializationFormat = flag.String("sf", "pb", "Serialization format")
+	nFiles              = flag.Int("nf", 10, "# of files")
+)
 
 type metrics struct {
 	id                  int
@@ -38,7 +41,8 @@ func main() {
 		log.Fatalln(err)
 	}
 	c := http.Client{}
-	for i := 0; i < 1000; i++ {
+	for i := 0; i < (*nFiles)*(*nFiles); i++ { // experimental
+		log.Println(i)
 		startAccessClock := time.Now()
 		startResponseClock := time.Now()
 		// Send GET request to server:
@@ -91,9 +95,8 @@ func main() {
 		}
 		m.deserializationTime = time.Since(startDeserializationClock).Seconds() * 1000
 		m.accessTime = time.Since(startAccessClock).Seconds() * 1000
-		if i > 499 {
-			m.log()
-		}
+
+		m.log()
 	}
 }
 

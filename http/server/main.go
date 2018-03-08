@@ -21,6 +21,7 @@ import (
 var (
 	addr                = flag.String("addr", ":8080", "the address to host the server")
 	serializationFormat = flag.String("sf", "pb", "Serialization format")
+	nFiles              = flag.Int("nf", 10, "# of files")
 )
 
 type handler struct{}
@@ -57,7 +58,7 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Decode .osm file depending on id:
-	file := "../../data/maps" + fmt.Sprintf("%d", id%29) + ".osm" // id mod 29 since we have filenames suffixed with a number ranging from 0 to 29
+	file := "../../data/maps/map" + fmt.Sprintf("%d", id%(*nFiles-1)) + ".osm"
 	x, err := osmdecoder.DecodeFile(file)
 	if err != nil {
 		log.Println("write:", err)

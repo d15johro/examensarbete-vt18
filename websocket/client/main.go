@@ -19,6 +19,7 @@ import (
 var (
 	dialURL             = flag.String("du", "ws://localhost:8080/websocket", "url to dial websocket server")
 	serializationFormat = flag.String("sf", "pb", "Serialization format")
+	nFiles              = flag.Int("nf", 10, "# of files")
 )
 
 type metrics struct {
@@ -53,14 +54,16 @@ func main() {
 			log.Fatalln(err)
 		}
 	}()
-	for i := 0; i < 1000; i++ {
+	for i := 0; i < (*nFiles)*(*nFiles); i++ { // experimental
+		log.Println(i)
 		// Request data from server:
 		startAccessClock := time.Now()
 		startResponseClock := time.Now()
 		requestMessage := struct {
 			ID                  uint32 `json:"id"`
 			SerializationFormat string `json:"serializationFormat"`
-		}{ID: uint32(i), SerializationFormat: *serializationFormat}
+			NumberOfFiles       uint32 `json:"numberOfFiles"`
+		}{ID: uint32(i), SerializationFormat: *serializationFormat, NumberOfFiles: uint32(*nFiles)}
 		if err := conn.WriteJSON(&requestMessage); err != nil {
 			log.Println(err)
 			break
@@ -101,9 +104,9 @@ func main() {
 		}
 		m.deserializationTime = time.Since(startDeserializationClock).Seconds() * 1000
 		m.accessTime = time.Since(startAccessClock).Seconds() * 1000
-		if i > 499 {
-			m.log()
-		}
+
+		m.log()
+
 	}
 }
 

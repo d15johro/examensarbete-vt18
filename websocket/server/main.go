@@ -51,13 +51,14 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		var requestMessage struct {
 			ID                  uint32 `json:"id"`
 			SerializationFormat string `json:"serializationFormat"`
+			NumberOfFiles       uint32 `json:"numberOfFiles"`
 		}
 		if err := conn.ReadJSON(&requestMessage); err != nil {
 			log.Println(err)
 			break
 		}
 		// Decode .osm file depending on id from request message:
-		file := "../../data/maps" + fmt.Sprintf("%d", requestMessage.ID%29) + ".osm" // id mod 29 since we have filenames suffixed with a number ranging from 0 to 29
+		file := "../../data/maps/map" + fmt.Sprintf("%d", requestMessage.ID%(requestMessage.NumberOfFiles-1)) + ".osm"
 		x, err := osmdecoder.DecodeFile(file)
 		if err != nil {
 			log.Println(err)
