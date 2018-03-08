@@ -15,6 +15,7 @@ import (
 
 var (
 	serializationFormat = flag.String("sf", "pb", "Serialization format")
+	iterations          = flag.Int("itr", 1, "# iterations")
 )
 
 func init() {
@@ -28,7 +29,7 @@ func main() {
 		log.Fatalln(err)
 	}
 	c := http.Client{}
-	for i := 0; i < 10; i++ { // experimental
+	for i := 0; i < *iterations; i++ { // experimental
 		log.Println(i)
 		startAccessClock := time.Now()
 		startResponseClock := time.Now()

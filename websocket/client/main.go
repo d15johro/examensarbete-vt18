@@ -15,6 +15,7 @@ import (
 var (
 	dialURL             = flag.String("du", "ws://localhost:8080/websocket", "url to dial websocket server")
 	serializationFormat = flag.String("sf", "pb", "Serialization format")
+	iterations          = flag.Int("itr", 1, "# iterations")
 )
 
 func init() {
@@ -40,7 +41,7 @@ func main() {
 			log.Fatalln(err)
 		}
 	}()
-	for i := 0; i < 10; i++ { // experimental
+	for i := 0; i < *iterations; i++ { // experimental
 		log.Println(i)
 		// Request data from server:
 		startAccessClock := time.Now()
