@@ -4,12 +4,12 @@ import (
 	"encoding/binary"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"math"
 	"net/http"
 	"time"
 
+	"github.com/d15johro/examensarbete-vt18/fs"
 	"github.com/d15johro/examensarbete-vt18/osmdecoder"
 	"github.com/d15johro/examensarbete-vt18/osmdecoder/fbsconv"
 	"github.com/d15johro/examensarbete-vt18/osmdecoder/pbconv"
@@ -32,7 +32,7 @@ var upgrader = websocket.Upgrader{
 func init() {
 	flag.Parse()
 	var err error
-	numberOfFiles, err = fileCount(mapsDir)
+	numberOfFiles, err = fs.FileCount(mapsDir)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -151,18 +151,4 @@ func appendFloat64ToBytes(data []byte, f float64) []byte {
 		data = append(data, buf[i])
 	}
 	return data
-}
-
-func fileCount(dirpath string) (uint32, error) {
-	i := 0
-	files, err := ioutil.ReadDir(dirpath)
-	if err != nil {
-		return 0, err
-	}
-	for _, file := range files {
-		if !file.IsDir() {
-			i++
-		}
-	}
-	return uint32(i), nil
 }

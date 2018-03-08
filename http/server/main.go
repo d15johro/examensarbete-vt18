@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"strconv"
@@ -12,6 +11,7 @@ import (
 
 	"github.com/google/flatbuffers/go"
 
+	"github.com/d15johro/examensarbete-vt18/fs"
 	"github.com/d15johro/examensarbete-vt18/osmdecoder/fbsconv"
 	"github.com/d15johro/examensarbete-vt18/osmdecoder/pbconv"
 	"github.com/golang/protobuf/proto"
@@ -31,7 +31,7 @@ type handler struct{}
 func init() {
 	flag.Parse()
 	var err error
-	numberOfFiles, err = fileCount(mapsDir)
+	numberOfFiles, err = fs.FileCount(mapsDir)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -135,18 +135,4 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func pathSegments(p string) []string {
 	return strings.Split(strings.Trim(p, "/"), "/")
-}
-
-func fileCount(dirpath string) (uint32, error) {
-	i := 0
-	files, err := ioutil.ReadDir(dirpath)
-	if err != nil {
-		return 0, err
-	}
-	for _, file := range files {
-		if !file.IsDir() {
-			i++
-		}
-	}
-	return uint32(i), nil
 }
