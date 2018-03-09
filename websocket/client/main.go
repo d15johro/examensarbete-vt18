@@ -15,7 +15,7 @@ import (
 var (
 	dialURL             = flag.String("du", "ws://localhost:8080/websocket", "url to dial websocket server")
 	serializationFormat = flag.String("sf", "pb", "Serialization format")
-	iterations          = flag.Int("itr", 1, "# iterations")
+	iterations          = flag.Int("itr", 36, "# iterations")
 )
 
 func init() {
@@ -54,12 +54,14 @@ func main() {
 			log.Println(err)
 			break
 		}
+		log.Println("reading...")
 		// Read response data from server:
 		_, data, err := conn.ReadMessage()
 		if err != nil {
 			log.Println(err)
 			break
 		}
+		log.Println("msg read")
 		m.ResponseTime = time.Since(startResponseClock).Seconds() * 1000
 		// Extract structuring and serialization time from data:
 		m.StructuringTime = extractFloat64FromBytes(data, len(data)-4-8-8, len(data)-4-8)

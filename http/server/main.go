@@ -41,7 +41,7 @@ func main() {
 		Addr:           *addr,
 		Handler:        &handler{},
 		ReadTimeout:    10 * time.Second,
-		WriteTimeout:   10 * time.Second,
+		WriteTimeout:   1000 * time.Second,         // we are writing large files to client...
 		MaxHeaderBytes: http.DefaultMaxHeaderBytes, // ~2 MB
 	}
 	log.Println("running http server on", *addr)

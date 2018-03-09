@@ -15,7 +15,7 @@ import (
 
 var (
 	serializationFormat = flag.String("sf", "pb", "Serialization format")
-	iterations          = flag.Int("itr", 1, "# iterations")
+	iterations          = flag.Int("itr", 36, "# iterations")
 )
 
 func init() {
@@ -61,10 +61,12 @@ func main() {
 		}
 		m.StructuringTime = structuringDuration.Seconds() * 1000
 		// Read response data:
+		log.Println("reading...")
 		data, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
 			log.Fatalln(err)
 		}
+		log.Println("msg read")
 		m.ResponseTime = time.Since(startResponseClock).Seconds() * 1000
 		m.DataSize = len(data)
 		// Deserialize data:
@@ -83,7 +85,6 @@ func main() {
 		}
 		m.DeserializationTime = time.Since(startDeserializationClock).Seconds() * 1000
 		m.AccessTime = time.Since(startAccessClock).Seconds() * 1000
-
 		m.Log()
 	}
 }
