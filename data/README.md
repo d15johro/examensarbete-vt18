@@ -2,7 +2,7 @@
 
 ## Process of downloading cities
 
-Bounding box (latitudes and longitudes) for each selected city was collected from a search on [mapdevelopers.com](http://www.mapdevelopers.com/geocode_bounding_box.php). The maps where then downloaded using the [Overpass API](https://www.overpass-api.de/).
+Bounding box (latitudes and longitudes) for each selected city and county was collected from searches on [mapdevelopers.com](http://www.mapdevelopers.com/geocode_bounding_box.php). The maps were then downloaded using the [Overpass API](https://www.overpass-api.de/).
 
 Maps are not published on github because of their size and risk of infringement on someone's personal integrity if the maps contain sensitive information.
 
