@@ -49,7 +49,7 @@ func main() {
 		if err != nil {
 			log.Fatalln(err)
 		}
-		m.ID = uint32(id)
+		m.ID = uint32(id + 1)
 		originalDataSize, err := strconv.Atoi(resp.Header.Get("originalDataSize"))
 		if err != nil {
 			log.Fatalln(err)

@@ -49,7 +49,7 @@ func main() {
 		requestMessage := struct {
 			ID                  uint32 `json:"id"`
 			SerializationFormat string `json:"serializationFormat"`
-		}{ID: uint32(i), SerializationFormat: *serializationFormat}
+		}{ID: uint32(i + 1), SerializationFormat: *serializationFormat}
 		if err := conn.WriteJSON(&requestMessage); err != nil {
 			log.Println(err)
 			break
