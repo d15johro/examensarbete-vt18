@@ -63,7 +63,8 @@ func main() {
 		}
 		log.Println("msg read")
 		m.ResponseTime = time.Since(startResponseClock).Seconds() * 1000
-		// Extract structuring and serialization time from data:
+		// Extract structuring time, serialization time, and original data size from data:
+		m.OriginalDataSize = extractUint64FromBytes(data, len(data)-4-8-8-8, len(data)-4-8-8)
 		m.StructuringTime = extractFloat64FromBytes(data, len(data)-4-8-8, len(data)-4-8)
 		m.SerializationTime = extractFloat64FromBytes(data, len(data)-4-8, len(data)-4)
 		// Extract and validate id from data:
@@ -73,8 +74,8 @@ func main() {
 			break
 		}
 		// Extract osm data from data:
-		data = data[:len(data)-8-8-4]
-		m.DataSize = len(data)
+		data = data[:len(data)-8-8-8-4]
+		m.SerializedDataSize = len(data)
 		// Deserialize data:
 		startDeserializationClock := time.Now()
 		switch *serializationFormat {
@@ -95,6 +96,10 @@ func main() {
 		m.AccessTime = time.Since(startAccessClock).Seconds() * 1000
 		m.Log()
 	}
+}
+
+func extractUint64FromBytes(data []byte, start, end int) uint64 {
+	return binary.LittleEndian.Uint64(data[start:end])
 }
 
 func extractUint32FromBytes(data []byte, start, end int) uint32 {

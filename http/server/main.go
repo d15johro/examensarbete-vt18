@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -66,14 +67,27 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
+
 	// Decode .osm file depending on id:
-	file := mapsDir + "map" + fmt.Sprintf("%d", uint32(id)%numberOfFiles) + ".osm"
-	x, err := osmdecoder.DecodeFile(file)
+	filename := mapsDir + "map" + fmt.Sprintf("%d", uint32(id)%numberOfFiles) + ".osm"
+	file, err := os.Open(filename)
 	if err != nil {
-		log.Println("write:", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
+	x, err := osmdecoder.Decode(file)
+	if err != nil {
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+	file.Close()
+	// get original file size:
+	fileinfo, err := os.Stat(filename)
+	if err != nil {
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+	originalDataSize := fileinfo.Size()
 	// Serialize object:
 	var (
 		data                    []byte
@@ -86,7 +100,6 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		startStructuringClock = time.Now()
 		osm, err := pbconv.Make(x)
 		if err != nil {
-			log.Println("write:", err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
@@ -103,7 +116,6 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		// means getting a pointer to the internal storage. Therefore, unlike pb where we start the
 		// serialize clock after the pb.OSM object has been structured, full build/serialize cycle
 		// is measured.
-		startStructuringClock = time.Now()
 		startSerializationClock = time.Now()
 		builder := flatbuffers.NewBuilder(0)
 		data, err = expcodec.SerializeFBS(builder, x)
@@ -112,13 +124,15 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
-		structuringDuration = time.Since(startStructuringClock) // structuring duration will be the same as serialization duration
+		// Structuring time is not meaused in fbs since its the same as serialization time. We send
+		// the default value of time.Duration back to the client.
 	default:
 		log.Fatalln("serialization format not supported")
 	}
 	serializationDuration := time.Since(startSerializationClock)
 	// Write header and data to response:
 	w.Header().Add("id", segs[0])
+	w.Header().Add("originalDataSize", fmt.Sprint(originalDataSize))
 	w.Header().Add("serializationDuration", serializationDuration.String())
 	w.Header().Add("structuringDuration", structuringDuration.String())
 	w.WriteHeader(http.StatusOK)

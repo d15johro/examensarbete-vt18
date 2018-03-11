@@ -7,6 +7,7 @@ import (
 	"log"
 	"math"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/d15johro/examensarbete-vt18/expcodec"
@@ -65,12 +66,25 @@ func handler(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 		// Decode .osm file depending on id from request message:
-		file := mapsDir + "map" + fmt.Sprintf("%d", requestMessage.ID%numberOfFiles) + ".osm"
-		x, err := osmdecoder.DecodeFile(file)
+		filename := mapsDir + "map" + fmt.Sprintf("%d", requestMessage.ID%numberOfFiles) + ".osm"
+		file, err := os.Open(filename)
 		if err != nil {
 			log.Println(err)
 			break
 		}
+		x, err := osmdecoder.Decode(file)
+		if err != nil {
+			log.Println(err)
+			break
+		}
+		file.Close()
+		// get original file size:
+		fileinfo, err := os.Stat(filename)
+		if err != nil {
+			log.Println(err)
+			break
+		}
+		originalDataSize := uint64(fileinfo.Size())
 		// Serialize object:
 		var (
 			data                    []byte
@@ -98,7 +112,6 @@ func handler(w http.ResponseWriter, r *http.Request) {
 			// means getting a pointer to the internal storage. Therefore, unlike pb where we start the
 			// serialize clock after the pb.OSM object has been structured, full build/serialize cycle
 			// is measured. This is done in osmcodec.SerializeFBS(x *osmdecoder.OSM).
-			startStructuringClock = time.Now()
 			startSerializationClock = time.Now()
 			builder := flatbuffers.NewBuilder(0)
 			data, err = expcodec.SerializeFBS(builder, x)
@@ -106,12 +119,15 @@ func handler(w http.ResponseWriter, r *http.Request) {
 				log.Println(err)
 				break
 			}
-			structuringTime = time.Since(startStructuringClock).Seconds() * 1000 // structuring time will be the same as serialization time
+			// Structuring time is not meaused in fbs since its the same as serialization time. We send
+			// the default value of time.Duration back to the client.
 		default:
 			log.Fatalln("serialization format not supported")
 		}
 		serializationTime := time.Since(startSerializationClock).Seconds() * 1000
+
 		// Send data to client:
+		data = appendUint64ToBytes(data, originalDataSize)
 		data = appendFloat64ToBytes(data, structuringTime)
 		data = appendFloat64ToBytes(data, serializationTime)
 		data = appendUint32ToBytes(data, requestMessage.ID)
@@ -120,6 +136,20 @@ func handler(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 	}
+}
+
+func uint64ToBytes(ui uint64) []byte {
+	bytes := make([]byte, 8)
+	binary.LittleEndian.PutUint64(bytes, ui)
+	return bytes
+}
+
+func appendUint64ToBytes(data []byte, ui uint64) []byte {
+	buf := uint64ToBytes(ui)
+	for i := 0; i < len(buf); i++ {
+		data = append(data, buf[i])
+	}
+	return data
 }
 
 func uint32ToBytes(ui uint32) []byte {

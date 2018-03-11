@@ -17,19 +17,21 @@ type Metrics struct {
 	SerializationTime   float64
 	DeserializationTime float64
 	StructuringTime     float64
-	DataSize            int
+	SerializedDataSize  int
+	OriginalDataSize    uint64
 	Filepath            string
 }
 
 func (m *Metrics) Log() {
-	s := fmt.Sprintf("%d,%f,%f,%f,%f,%f,%d\n",
+	s := fmt.Sprintf("%d,%d,%d,%f,%f,%f,%f,%f\n",
 		m.ID,
+		m.OriginalDataSize,
+		m.SerializedDataSize,
 		m.AccessTime,
 		m.ResponseTime,
 		m.SerializationTime,
-		m.DeserializationTime,
 		m.StructuringTime,
-		m.DataSize)
+		m.DeserializationTime)
 	file, err := os.OpenFile(m.Filepath, os.O_APPEND|os.O_WRONLY, 0600)
 	if err != nil {
 		log.Fatalln(err)
@@ -41,6 +43,7 @@ func (m *Metrics) Log() {
 }
 
 func (m *Metrics) Setup() error {
+	// check if file exists. If it exists, remove it
 	_, err := os.Stat(m.Filepath)
 	if err != nil {
 		if !os.IsNotExist(err) {
@@ -49,6 +52,16 @@ func (m *Metrics) Setup() error {
 			}
 		}
 	}
-	_, err = os.Create(m.Filepath)
-	return err
+	// create file
+	file, err := os.Create(m.Filepath)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	// write first line to file
+	s := "ID,Orginal Datastorlek,Serialiserad Datastorlek,Accesstid,Svarstid,Serialiseringstid,Struktureringstid,Deserialiseringstid\n"
+	if _, err = file.WriteString(s); err != nil {
+		log.Fatalln(err)
+	}
+	return nil
 }

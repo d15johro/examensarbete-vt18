@@ -50,6 +50,11 @@ func main() {
 			log.Fatalln(err)
 		}
 		m.ID = uint32(id)
+		originalDataSize, err := strconv.Atoi(resp.Header.Get("originalDataSize"))
+		if err != nil {
+			log.Fatalln(err)
+		}
+		m.OriginalDataSize = uint64(originalDataSize)
 		serializationDuration, err := time.ParseDuration(resp.Header.Get("serializationDuration"))
 		if err != nil {
 			log.Fatalln(err)
@@ -68,7 +73,7 @@ func main() {
 		}
 		log.Println("msg read")
 		m.ResponseTime = time.Since(startResponseClock).Seconds() * 1000
-		m.DataSize = len(data)
+		m.SerializedDataSize = len(data)
 		// Deserialize data:
 		startDeserializationClock := time.Now()
 		switch *serializationFormat {
