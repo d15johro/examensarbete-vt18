@@ -16,6 +16,7 @@ import (
 var (
 	serializationFormat = flag.String("sf", "pb", "Serialization format")
 	iterations          = flag.Int("itr", 36, "# iterations")
+	warmups             = flag.Int("wm", 36, "# warmups")
 )
 
 func init() {
@@ -90,6 +91,9 @@ func main() {
 		}
 		m.DeserializationTime = time.Since(startDeserializationClock).Seconds() * 1000
 		m.AccessTime = time.Since(startAccessClock).Seconds() * 1000
-		m.Log()
+		if i >= *warmups {
+			m.ID = m.ID - uint32(*warmups)
+			m.Log()
+		}
 	}
 }
