@@ -62,7 +62,7 @@ func main() {
 			log.Println(err)
 			break
 		}
-		log.Println("msg read")
+		log.Printf("msg read: %d bytes\n", len(data))
 		m.ResponseTime = time.Since(startResponseClock).Seconds() * 1000
 		// Extract structuring time, serialization time, and original data size from data:
 		m.OriginalDataSize = extractUint64FromBytes(data, len(data)-4-8-8-8, len(data)-4-8-8)
