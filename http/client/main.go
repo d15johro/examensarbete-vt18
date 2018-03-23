@@ -14,13 +14,16 @@ import (
 )
 
 var (
-	serializationFormat = flag.String("sf", "pb", "Serialization format")
-	iterations          = flag.Int("itr", 36, "# iterations")
-	warmups             = flag.Int("wm", 36, "# warmups")
+	serializationFormat = flag.String("sf", "", "Serialization format")
+	iterations          = flag.Int("itr", 0, "# iterations")
+	warmups             = flag.Int("wm", 0, "# warmups")
 )
 
 func init() {
 	flag.Parse()
+	if *serializationFormat == "" || *iterations == 0 || *warmups == 0 {
+		log.Fatal("The following flags must be provided:\nflag\t\tvalue\t\tmeaning\nsf\t\tpb or fb\tThe serializationformat to use\nitr\t\tgreater than 0\t# of iterations\nwm\t\tgreater than 0\t# of warmup iterations")
+	}
 }
 
 func main() {

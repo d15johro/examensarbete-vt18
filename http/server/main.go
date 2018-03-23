@@ -20,7 +20,7 @@ import (
 
 var (
 	addr                = flag.String("addr", ":8080", "the address to host the server")
-	serializationFormat = flag.String("sf", "pb", "Serialization format")
+	serializationFormat = flag.String("sf", "", "Serialization format")
 	mapsDir             = "../../data/maps/"
 	numberOfFiles       uint32
 )
@@ -29,6 +29,9 @@ type handler struct{}
 
 func init() {
 	flag.Parse()
+	if *serializationFormat == "" {
+		log.Fatal("The following flags must be provided:\nflag\t\tvalue\t\tmeaning\nsf\t\tpb or fb\tThe serializationformat to use")
+	}
 	var err error
 	numberOfFiles, err = fs.FileCount(mapsDir)
 	if err != nil {
@@ -67,7 +70,6 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
-
 	// Decode .osm file depending on id:
 	filename := mapsDir + "map" + fmt.Sprintf("%d", uint32(id)%numberOfFiles) + ".osm"
 	file, err := os.Open(filename)
