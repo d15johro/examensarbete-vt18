@@ -29,6 +29,7 @@ type handler struct{}
 
 func init() {
 	flag.Parse()
+	// sf flag is required:
 	if *serializationFormat == "" {
 		log.Fatal("The following flags must be provided:\nflag\t\tvalue\t\tmeaning\nsf\t\tpb or fb\tThe serializationformat to use")
 	}

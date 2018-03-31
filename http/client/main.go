@@ -21,6 +21,7 @@ var (
 
 func init() {
 	flag.Parse()
+	// Flags are required:
 	if *serializationFormat == "" || *iterations == 0 || *warmups == 0 {
 		log.Fatal("The following flags must be provided:\nflag\t\tvalue\t\tmeaning\nsf\t\tpb or fb\tThe serializationformat to use\nitr\t\tgreater than 0\t# of iterations\nwm\t\tgreater than 0\t# of warmup iterations")
 	}
@@ -33,7 +34,7 @@ func main() {
 		log.Fatalln(err)
 	}
 	c := http.Client{}
-	for i := 0; i < *iterations; i++ { // experimental
+	for i := 0; i < *iterations; i++ {
 		log.Println(i)
 		startAccessClock := time.Now()
 		startResponseClock := time.Now()
@@ -94,6 +95,7 @@ func main() {
 		}
 		m.DeserializationTime = time.Since(startDeserializationClock).Seconds() * 1000
 		m.AccessTime = time.Since(startAccessClock).Seconds() * 1000
+		// Log data to file after warmup iterations:
 		if i >= *warmups {
 			m.ID = m.ID - uint32(*warmups)
 			m.Log()
